@@ -128,7 +128,7 @@ relu, lr 0.1) or Adam (SNN, lr 5e-3), 1000 steps. `figures/e8_paper_faithful_vs_
 | linear | `= L` exactly / `= L` | `= L` / `= L` | `= L` / `= L` | 16 / 16 | 832 | 1e-16 | 0 |
 | tanh (`s = 0.5`) | 1.95..6.90 (0.99, 1.00) / 2.4..4.4 (0.31, 0.65) | 1.96..6.88 (0.98, 1.00) / 1.2 (0.01) | 1.7..6.2 / 1.00 | 16 / 40 | 395 | 0.01 | 0 |
 | relu | 2.7..10.1 (1.41, 0.99) / 2.5..18 (2.1, 0.49) | 1.45..4.5 (0.57, 0.95) / 1.3..5.5 (0.81, 0.94) | 1.0..1.4 / 1.0..2.8 | 16,4,4,1,1,2 / 32,32,32,4,4,2 | 43 | 0.03-0.33 | 0 |
-| **SNN**, rank-4 balanced init (`s = 3`) | 2.6..5.1 (0.50, 0.96) / 1.8..5.1 (0.71, 0.97) | 1.2..2.5 (0.23, 0.61) / 1.5..3.7 (0.49, 0.97) | 1.0 / 1.0 | 16,4,4,4,4,7 / 56,4,4,4,20,4 | 1 | 0.80-0.94 | 0.65-1.10 |
+| **SNN**, rank-4 balanced init (`s = 3`) | 2.6..5.1 (0.45, 0.93) / 1.8..5.1 (0.70, 0.97) | 1.2..2.5 (0.31, 0.70) / 1.5..3.7 (0.47, 0.97) | 1.0 / 1.0 | 16,4,4,4,4,7 / 56,4,4,4,20,4 | 1 | 0.80-0.94 | 0.65-1.10 |
 | **SNN**, full-rank orthogonal init (`s = 3`) | 2.1..4.1 (0.37, 0.96) / 1.3..7.2 (1.2, 0.90) | 1.1..2.5 (0.25, 0.90) / 1.1..2.3 (0.20, 0.86) | 1.0-1.5 / 1.0 | 16,16,13,5,3,1 / 1,10,10,10,10,10 | 0 | 0.95-1.04 | 1.08-1.30 |
 
 Reading: the paper's tanh result (C11) is reproduced *at initialisation*, where `tanh(z) ~ z` for the small
@@ -170,7 +170,33 @@ lower-block norm 0.0 (`results/verify_headline.json`).
 
 ### 4.4 e2b: non-spiking controls (ReLU, smooth sigmoid-forward SNN, Gaussian-init linear)
 
-_Pending: being re-run after the container restart; see section 9 for the state of each experiment._
+Same protocol as e2a (`L = 2..8`, settings A and B, 2 seeds, Adam 800 steps; linear: GD).
+`results/e2b_controls_depth/tables.md`, `figures/e2b_controls_depth_*.png`. Linear fits over `L` of the
+`H_o` statistics (seed means; paper predicts slope 1):
+
+| kind | coherence slope init / end (R^2) | `ratio_split` slope init / end | dominant count at `L = 2, 3, 4, 8` (init) | `||H_f||/||H_o||` after training | zero % of `H_o` at `L = 8` |
+|---|---|---|---|---|---|
+| ReLU, A / B | 0.43 / 0.24 (0.93 / 0.77); 0.48 / 0.15 (0.99 / 0.60) | -0.28 / -0.05; 0.07 / -0.18 (all R^2 < 0.7) | 4, 3, 3.5, 1; 6, 4, 1.5, 1 | 0.002-0.008 | 45-62 |
+| smooth SNN (sigmoid forward, `k = 4`), A / B | 0.45 / 0.25 (0.95 / 0.87); 0.37 / 0.26 (0.97 / 0.95) | -0.09 / 0.15; 0.06 / 0.00 | 4, 3, 3.5, 1; 6, 4, 3.5, 1 | 0.000-0.025 | 52-64 |
+| linear, Gaussian init, A / B | 0.40 / 0.50 (0.96 / 0.99); 0.38 / 0.38 (0.92 / 0.96) | **1.71 / 1.95**; **1.82 / 1.46** (R^2 >= 0.87) | 2.5, 3, 2, 1; 5.5, 3, 2, 2 | 0.001-0.006 | 80-97 (rank-deficient by construction) |
+| LIF-SNN (e2a, for comparison), A / B | 0.33 / 0.51 (0.99 / 0.98); 0.40 / 0.47 (0.99 / 0.94) | -0.02 / 0.32; 0.11 / 0.12 | 4, 3.3, 3.7, 1.7; 6, 4.7, 4.3, 1.5 | **0.67-0.96** | 47-52 |
+
+* Every nonlinear control behaves like the SNN on C1/C2: the dominant count is `d_out` at `L = 2`
+  (4 in A, 6 in B, never `r^2`), decays to 1-2 by `L = 8`, and the data-driven dominant/bulk ratio is
+  flat in `L` (2-5). Coherence grows with slope 0.4-0.5 at init in all of them and *drops* after
+  training for ReLU and the smooth SNN (slope 0.15-0.26) while it *rises* for the LIF-SNN (0.47-0.51).
+* The spiking-specific differences are (i) `H_f`: the true Hessians of ReLU and the smooth SNN become
+  Gauss-Newton dominated after training (`||H_f||/||H_o|| <= 0.025`, as the paper's C3 says), whereas the
+  LIF-SNN's surrogate `H_f` stays at 0.7-1.0; (ii) symmetry: asymmetry 1e-16 for the controls vs 0.5-1.2
+  for the LIF-SNN.
+* Gaussian-init *linear* nets are the only control with a growing gap: `ratio_split ~ 1.7-1.9 L`
+  (13-15 at `L = 8`), but it is carried by 1-2 eigenvalues, not an `r^2` cluster, and the coherence
+  is `~0.4-0.5 L`; i.e. without the balanced initialisation the paper's exact structure is already gone.
+* Centring the readout features (setting B, seed 0) collapses the `d_out` cluster at `L = 2`: ReLU
+  6 -> 2 dominant (readout block `lambda_max` 6.3 -> 2.0, top-eigenvector energy in `W_L` 0.88 -> 0.66),
+  smooth SNN 6 -> 2 (`lambda_max(B_LL)` 1.87 -> 0.41, `ratio_split` 2.85 -> 1.14). At `L >= 4` the cluster
+  is already absent and centring changes little. This confirms P2: the outliers of nonlinear nets on
+  whitened data are a feature-mean (data-covariance) effect generated inside the network.
 
 ### 4.5 e7: structure of the update-field Jacobian
 
@@ -183,16 +209,16 @@ _Pending; see section 9._
 
 ## 5. Claim-by-claim verdict
 
-| claim | linear, balanced init (paper) | linear, Gaussian init | tanh | ReLU | LIF-SNN |
-|---|---|---|---|---|---|
-| C1 `r^2` dominant + equal bulk + zeros | **holds** exactly (e1, e8) | partially: `r^2` cluster, no equal bulk | holds at init, lost after training (e8) | fails: no gap at `r^2` (e8; e2b pending) | **fails**: no gap at `r^2` (ratio 1.00-1.05); the only cluster has `d_out` members and lives in the readout (e2a, e8) |
-| C2 ratio `= L` / `Theta(L)` | **holds** exactly | `Theta(L)` with slope < 1 | slope 0.99 at init, ~0 after training | coherence slope 0.6-0.8 | **fails**: coherence `~0.4-0.5 L`, gap slope ~0; only the gapless fixed-index ratio grows |
-| C3 `H_f -> 0` exponentially, `H -> H_o` | **holds** (rate matches theory) | holds | holds (`||H_f||/||H_o||` 0.01 after training) | partially (0.03-0.33) | **fails**: 0.8-1.0 after training; `H` is not even symmetric |
-| C4 depth, not data | holds by construction | holds | n/a | pending (e4) | **inverted** in the sense that the SNN's outliers come from an internal feature-covariance imbalance (P2); e4 pending |
-| C5 ratio constant during GD | **holds** (excursion only for unaligned targets) | n/a | fails (coherence `L -> 1.2`) | fails | **fails** (no `L` to preserve; coherence drifts 1.2 -> 1.5 at `L = 2`) |
-| P1 coherence `< L` for nonlinear nets | `= L` | `< L` | `< L` after training | `< L` | **holds**: `0.4-0.5 L` |
-| P2 `d_out` feature-mean outliers from the readout | absent (centred features) | absent | pending | pending (e2b centering ablation) | **holds** for `L <= 3`, diluted by dead units for `L >= 4` |
-| block-triangular `dg/dtheta` | symmetric | symmetric | symmetric | symmetric | **exactly block upper-triangular** (e7) |
+| claim | linear, balanced init (paper) | linear, Gaussian init | tanh (small balanced init) | ReLU | smooth SNN (sigmoid forward) | LIF-SNN (surrogate gradient) |
+|---|---|---|---|---|---|---|
+| C1 `r^2` dominant + equal bulk + zeros | **holds** exactly (e1, e8) | partially: a 1-2 eigenvalue spike with a large gap, no `r^2` cluster, no equal bulk (e1, e2b) | holds at init, lost after training (e8) | fails: no gap at `r^2`; `d_out` cluster at `L <= 3` only (e2b, e8) | fails: same as ReLU (e2b) | **fails**: no gap at `r^2` (1.00-1.05); the only cluster has `d_out` members and lives in the readout (e2a, e8) |
+| C2 ratio `= L` / `Theta(L)` | **holds** exactly | gap grows (`ratio_split ~ 1.8 L`) but coherence `~0.4-0.5 L` | slope 0.99 at init, ~0 after training | coherence slope 0.43-0.48 at init, 0.15-0.24 after training; `ratio_split` flat | coherence slope 0.37-0.45 / 0.25; `ratio_split` flat | **fails**: coherence `~0.4-0.5 L`, gap slope ~0; only the gapless fixed-index ratio grows |
+| C3 `H_f -> 0` exponentially, `H -> H_o` | **holds** (rate matches theory) | holds | holds (`||H_f||/||H_o||` 0.01 after training) | holds (<= 0.008 after training) | holds (<= 0.025) | **fails**: 0.7-1.0 after training; `H` is not even symmetric |
+| C4 depth, not data | holds by construction | holds | n/a | pending (e4) | pending (e4) | **inverted**: the SNN's outliers come from an internal feature-covariance imbalance (P2); e4 pending |
+| C5 ratio constant during GD | **holds** (excursion only for unaligned targets) | n/a | fails (coherence `L -> 1.2`) | fails (coherence falls during training) | fails | **fails** (no `L` to preserve; coherence drifts, e.g. 1.1 -> 1.3 at `L = 2`) |
+| P1 coherence `< L` for nonlinear nets | `= L` | `< L` | `< L` after training | `< L` (0.3-0.5 L) | `< L` | **holds**: `0.4-0.5 L` |
+| P2 `d_out` feature-mean outliers from the readout | absent (centred features) | absent | not tested | **holds**: 6 -> 2 outliers when features are centred (`L = 2`) | **holds**: 6 -> 2, readout `lambda_max` 1.87 -> 0.41 | **holds** for `L <= 3`, diluted by dead units for `L >= 4` |
+| block-triangular `dg/dtheta` | symmetric | symmetric | symmetric | symmetric (lower blocks 2-50) | symmetric (lower blocks 1-7) | **exactly block upper-triangular** (e7) |
 
 ## 6. Why the SNN behaves differently
 
