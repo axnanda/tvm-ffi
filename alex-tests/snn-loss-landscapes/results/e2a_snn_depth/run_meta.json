@@ -1,0 +1,10 @@
+{
+ "started": "2026-10-15 06:55:53",
+ "budget_min": 72.0,
+ "skipped": [
+  "B_L6_seed2_kaiming (tier 2; elapsed 69.2 min + est 2.9 > budget 72.0)",
+  "B_L8_seed2_kaiming (tier 2; elapsed 69.2 min + est 5.0 > budget 72.0)"
+ ],
+ "elapsed_min": 69.2399741212527,
+ "finished": "2026-10-15 08:05:08"
+}
