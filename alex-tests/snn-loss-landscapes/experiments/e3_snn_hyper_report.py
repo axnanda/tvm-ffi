@@ -18,9 +18,8 @@ verdicts = json.load(open(os.path.join(RES, "verdicts.json")))  # hand-written: 
 report = {
     "exp": EXP,
     "script": "experiments/e3_snn_hyper.py (figures/tables regenerated with --figures; report via experiments/e3_snn_hyper_report.py)",
-    "result_files": sorted([os.path.relpath(p, ROOT) for p in
-                            [os.path.join(RES, f) for f in ["summary.json", "analysis.json", "run_meta.json", "run.log", "verdicts.json", "report.json"]]
-                            + glob.glob(os.path.join(RES, "raw", "*.npz"))]),
+    "result_files": [os.path.relpath(os.path.join(RES, f), ROOT) for f in ["summary.json", "analysis.json", "run_meta.json", "run.log", "verdicts.json", "report.json"]]
+                    + [f"results/{EXP}/raw/<run_name>.npz ({len(glob.glob(os.path.join(RES, 'raw', '*.npz')))} files: eig_Ho_step*, eig_symH_step*, eigH_raw_re_step*, eigH_raw_im_step*, loss_curve, grad_norm_curve, Wstar; run_name = <tag>_L<L>_seed<seed> as in summary.json)"],
     "figures": sorted([os.path.relpath(p, ROOT) for p in glob.glob(os.path.join(ROOT, "figures", EXP + "_*.png")) if "_smoke_" not in p]),
     "n_runs": len(runs),
     "n_runs_planned": meta.get("n_runs_planned"),
