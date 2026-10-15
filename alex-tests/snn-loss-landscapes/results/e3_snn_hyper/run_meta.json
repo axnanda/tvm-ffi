@@ -1,0 +1,90 @@
+{
+ "exp": "e3_snn_hyper",
+ "steps": 400,
+ "lr": 0.005,
+ "base": {
+  "L": 4,
+  "T": 8,
+  "k": 4.0,
+  "beta": 0.9,
+  "detach_reset": false,
+  "reset": "soft",
+  "surrogate": "sigmoid",
+  "readout": "rate",
+  "gain_mult": 1.0,
+  "center_features": false
+ },
+ "sweeps": {
+  "T": [
+   1,
+   2,
+   4,
+   8,
+   16
+  ],
+  "k": [
+   1.0,
+   2.0,
+   4.0,
+   8.0,
+   25.0
+  ],
+  "beta": [
+   0.0,
+   0.5,
+   0.9,
+   0.99
+  ],
+  "detach_reset": [
+   false,
+   true
+  ],
+  "reset": [
+   "soft",
+   "hard"
+  ],
+  "surrogate": [
+   "sigmoid",
+   "atan"
+  ],
+  "readout": [
+   "rate",
+   "membrane"
+  ],
+  "gain_mult": [
+   0.5,
+   1.0,
+   2.0
+  ],
+  "center_features": [
+   false,
+   true
+  ]
+ },
+ "depth_grid": {
+  "k": [
+   1.0,
+   4.0,
+   25.0
+  ],
+  "T": [
+   1,
+   4,
+   16
+  ],
+  "L": [
+   2,
+   4,
+   6
+  ]
+ },
+ "seeds": [
+  0,
+  1
+ ],
+ "n_runs_done": 4,
+ "n_runs_planned": 62,
+ "reductions": [],
+ "elapsed_min": 3.431744909286499,
+ "budget_min": 60.0
+}

@@ -499,14 +499,15 @@ def make_figures(res_dir, fig_dir, exp):
          ("readout_block_top", "readout block top"), ("max_hidden_block_re", "max hidden block Re")],
         [("trace_Ho", "trace(H_o)"), ("trace_H", "trace(H)")],
         [("cluster_Ho.ratio_paper", "ratio_paper(H_o)"), ("cluster_Ho.ratio_split", "ratio_split(H_o)"),
-         ("cluster_Hre.ratio_split", "ratio_split(Re H)"), ("coh_Ho.coherence", "coherence(H_o)"), ("coh_H.coherence", "coherence(sym H)")],
-        [("dominant_count_Ho", "n_dom(H_o)"), ("dominant_count_H", "n_dom(sym H)"), ("dominant_count_Hre", "n_dom(Re H)")],
+         ("cluster_H.ratio_split", "ratio_split(sym H)"), ("cluster_Hre.ratio_split", "ratio_split(Re H)")],
+        [("coh_Ho.coherence", "coherence(H_o)"), ("coh_H.coherence", "coherence(sym H)"),
+         ("dominant_count_Ho", "n_dom(H_o)"), ("dominant_count_H", "n_dom(sym H)"), ("dominant_count_Hre", "n_dom(Re H)")],
         [("zero_frac_Ho", "zero frac(H_o)"), ("zero_frac_H", "zero frac(sym H)"), ("neg_frac_H", "neg frac(sym H)"), ("neg_frac_Hre", "neg frac(Re H)")],
         [("asymmetry_H", "asymmetry(H)"), ("Hf_over_Ho", "|H_f|/|H_o|"), ("max_abs_imag_over_max_re", "max|Im|/maxRe")],
         [("spikes.mean_rate", "mean rate"), ("spikes.window_frac", "window frac"), ("features.mean_frac_of_second_moment", "||mu||^2/tr M")],
         [("features.mu_sq_norm", "||mu||^2"), ("features.cov_top3.0", "lam1(Cov_a)"), ("topk_energy_lastlayer_mean_Ho", "top-6 evec energy in W_L")],
     ]
-    panel_scale = ["log", "log", "linear", "linear", "linear", "linear", "linear", "log"]
+    panel_scale = ["log", "log", "log", "linear", "linear", "linear", "linear", "log"]
     markers = ["o", "s", "^", "v", "D", "x"]
     factor_tables = {}
     for factor, xscale in numeric:
@@ -605,6 +606,43 @@ def make_figures(res_dir, fig_dir, exp):
         tables["k_exponents"] = md_table(["metric", "exponent@init", "exponent@end"], rows)
     analysis["k_loglog_fits"] = fits
 
+    # ---- 2b. per-layer diagonal-block top eigenvalues of H_o vs k and vs T ------------------------
+    block_fits = {}
+    Lb = BASE["L"]
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8.5))
+    for j, factor in enumerate(["k", "T"]):
+        rs = sweep_runs(runs, factor)
+        if not rs:
+            continue
+        for i, (when, col) in enumerate(whens):
+            ax = axes[i, j]
+            for l in range(Lb):
+                path = f"coh_Ho.lambda_max_blocks.{l}"
+                bv = by_value(runs, factor, when, path)
+                xs = np.array(list(bv.keys()), float); m = np.array([bv[v][0] for v in bv]); s_ = np.array([bv[v][1] for v in bv])
+                lab = f"W{l + 1}" + (" (readout)" if l == Lb - 1 else f" ({Lb - 1 - l} surrogate factors)")
+                xs_all = np.array([r_["hp"][factor] for r_ in rs], float)
+                ys_all = np.array([get(r_[when], path) for r_ in rs], float)
+                a, b, R2 = loglog_fit(xs_all, ys_all)
+                block_fits[f"{factor}|W{l + 1}|{when}"] = {"exponent": a, "R2": R2}
+                lab += f": {factor}^{a:.2f}"
+                ax.errorbar(xs, m, yerr=np.minimum(s_, 0.99 * np.abs(m)), marker=markers[l % 6], ms=4, capsize=2, lw=1, label=lab)
+            bv = by_value(runs, factor, when, "coh_Ho.lambda_max")
+            xs = np.array(list(bv.keys()), float); m = np.array([bv[v][0] for v in bv])
+            ax.plot(xs, m, "k--", lw=1, label="lam_max(H_o)")
+            if factor == "k":
+                kk = np.array([1.0, 25.0]); ax.plot(kk, m[np.argmin(np.abs(xs - 1.0))] * kk ** 2, "k:", lw=0.8, label="k^2 ref")
+                ax.plot(kk, m[np.argmin(np.abs(xs - 1.0))] * kk ** (2 * (Lb - 1)), "k-.", lw=0.8, label=f"k^{2 * (Lb - 1)} ref")
+            ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel(factor); ax.set_ylabel("top eigenvalue of diagonal block of H_o")
+            ax.set_title(f"per-layer block scale vs {factor} ({when})", fontsize=9); ax.grid(alpha=0.3); ax.legend(fontsize=7)
+    fig.suptitle(f"{exp}: which layer block sets the scale of H_o, and how it scales with k and T (L=4; mean +- std over seeds)", fontsize=10)
+    fig.tight_layout()
+    fn = os.path.join(fig_dir, f"{exp}_block_scaling.png"); fig.savefig(fn, dpi=120); plt.close(fig); figures.append(fn)
+    analysis["block_loglog_fits"] = block_fits
+    if block_fits:
+        rows = [[f"W{l + 1}"] + [f"{block_fits.get(f'{f}|W{l + 1}|{w}', {}).get('exponent', np.nan):.2f}" for f in ["k", "T"] for w, _ in whens] for l in range(Lb)]
+        tables["block_exponents"] = md_table(["block", "k-exp@init", "k-exp@end", "T-exp@init", "T-exp@end"], rows)
+
     # ---- 3. categorical factors -------------------------------------------------------------------
     cat = [("detach_reset", True), ("reset", "hard"), ("surrogate", "atan"), ("readout", "membrane"), ("center_features", True)]
     cat_metrics = [("coh_Ho.lambda_max", "lam_max(H_o)", "log"), ("max_re_eigH", "max Re eig(H)", "log"), ("cluster_Ho.ratio_split", "ratio_split(H_o)", "linear"),
@@ -637,8 +675,8 @@ def make_figures(res_dir, fig_dir, exp):
     drs = [r_ for r_ in runs if hp_matches(r_["hp"], {"k", "T", "L"}) and r_["hp"]["k"] in DEPTH_K and r_["hp"]["T"] in DEPTH_T and r_["seed"] == 0]
     depth_tab = {}
     if drs:
-        dmetrics = [("coh_Ho.coherence", "coherence(H_o)", "linear"), ("cluster_Ho.ratio_split", "ratio_split(H_o)", "linear"),
-                    ("cluster_Ho.ratio_paper", "ratio_paper(H_o)", "linear"), ("coh_Ho.lambda_max", "lam_max(H_o)", "log"),
+        dmetrics = [("coh_Ho.coherence", "coherence(H_o)", "linear"), ("cluster_Ho.ratio_split", "ratio_split(H_o)", "log"),
+                    ("cluster_Ho.ratio_paper", "ratio_paper(H_o)", "log"), ("coh_Ho.lambda_max", "lam_max(H_o)", "log"),
                     ("max_re_eigH", "max Re eig(H)", "log"), ("dominant_count_Ho", "n_dom(H_o)", "linear"),
                     ("asymmetry_H", "asymmetry(H)", "linear"), ("spikes.mean_rate", "mean rate", "linear")]
         kcol = {1.0: "tab:green", 4.0: "tab:blue", 25.0: "tab:purple"}; tls = {1: ":", 4: "--", 16: "-"}
@@ -740,6 +778,9 @@ def make_figures(res_dir, fig_dir, exp):
     # ---- 7. block-structure check across all runs ---------------------------------------------------
     chk = {"max_lower_block_norm_overall": float(max(get(r_[w], "max_lower_block_norm") for r_ in runs for w in ("init", "end"))),
            "max_eig_union_err_overall": float(max(get(r_[w], "eig_union_err") for r_ in runs for w in ("init", "end"))),
+           "max_eig_union_err_relative_overall": float(max(get(r_[w], "eig_union_err") / max(abs(get(r_[w], "max_re_eigH")), abs(get(r_[w], "min_re_eigH")), 1e-300) for r_ in runs for w in ("init", "end"))),
+           "max_lower_over_H_norm_overall": float(max(get(r_[w], "max_lower_over_H_norm") for r_ in runs for w in ("init", "end"))),
+           "max_abs_imag_eigH_overall": float(max(get(r_[w], "max_abs_imag_eigH") for r_ in runs for w in ("init", "end"))),
            "max_readout_block_vs_I_kron_Sigma_rel_err": float(max(get(r_[w], "readout_block_vs_I_kron_Sigma_rel_err") for r_ in runs for w in ("init", "end"))),
            "max_abs_imag_over_max_re_overall": float(max(get(r_[w], "max_abs_imag_over_max_re") for r_ in runs for w in ("init", "end"))),
            "frac_evals_where_maxRe_is_readout_block": float(np.mean([get(r_[w], "max_re_eigH_is_readout") for r_ in runs for w in ("init", "end")])),

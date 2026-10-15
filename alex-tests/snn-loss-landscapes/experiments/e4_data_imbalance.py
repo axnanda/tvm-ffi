@@ -1028,12 +1028,24 @@ def main():
         tiers = [(0, tier0), (1, tier1), (2, tier2)]
     summary: List[dict] = []
     skipped: List[str] = []
+    prior_min = 0.0  # wall time already spent before a resume (container restarts): counts against the budget
+    done_names = set()
+    if not args.smoke and os.path.exists(os.path.join(res_dir, "summary.json")):
+        with open(os.path.join(res_dir, "summary.json")) as f:
+            summary = json.load(f)
+        done_names = {r["name"] for r in summary}
+        if os.path.exists(os.path.join(res_dir, "run_meta.json")):
+            with open(os.path.join(res_dir, "run_meta.json")) as f:
+                prior_min = float(json.load(f).get("elapsed_min", 0.0))
+        print(f"RESUME: {len(done_names)} runs already in summary.json, prior elapsed {prior_min:.1f} min", flush=True)
     meta = {"started": time.strftime("%Y-%m-%d %H:%M:%S"), "budget_min": budget, "steps": steps, "ho_every": ho_every,
-            "full_steps": list(full_steps), "skipped": skipped,
+            "full_steps": list(full_steps), "skipped": skipped, "prior_elapsed_min": prior_min, "resumed_runs": len(done_names),
             "plan": [{"tier": t, "runs": [f"{k}_{c}_L{L}_seed{s}" for (k, c, L, s) in p]} for t, p in tiers]}
     for tier, plan in tiers:
         for (kind, cond, L, seed) in plan:
-            elapsed_min = (time.time() - T0) / 60
+            if f"{kind}_{cond}_L{L}_seed{seed}" in done_names:
+                continue
+            elapsed_min = prior_min + (time.time() - T0) / 60
             est = EST_RUN_SEC[kind].get(L, 60) / 60
             if tier > 0 and elapsed_min + est > budget:
                 msg = f"{kind}_{cond}_L{L}_seed{seed} (tier {tier}; elapsed {elapsed_min:.1f} min + est {est:.1f} > budget {budget})"
@@ -1043,13 +1055,13 @@ def main():
             info = run_one(kind, cond, L, seed, steps, ho_every, full_steps, res_dir)
             info["tier"] = tier
             summary.append(info)
-            meta["elapsed_min"] = (time.time() - T0) / 60
+            meta["elapsed_min"] = prior_min + (time.time() - T0) / 60
             with open(os.path.join(res_dir, "summary.json"), "w") as f:
                 json.dump(summary, f)
             with open(os.path.join(res_dir, "run_meta.json"), "w") as f:
                 json.dump(meta, f, indent=1)
             print(f"[elapsed {meta['elapsed_min']:.1f} min, {len(summary)} runs done]", flush=True)
-    meta["elapsed_min"] = (time.time() - T0) / 60
+    meta["elapsed_min"] = prior_min + (time.time() - T0) / 60
     meta["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
     with open(os.path.join(res_dir, "run_meta.json"), "w") as f:
         json.dump(meta, f, indent=1)
