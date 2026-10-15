@@ -82,12 +82,12 @@
   0,
   1
  ],
- "n_runs_done": 23,
+ "n_runs_done": 24,
  "n_runs_planned": 62,
  "reductions": [],
- "cpu_min_total": 23.6324785202365,
- "wall_min_total": 26.766253777345025,
- "elapsed_min": 26.766253789265953,
+ "cpu_min_total": 25.802761305069833,
+ "wall_min_total": 28.96742782990138,
+ "elapsed_min": 28.967427841822307,
  "budget_min": 60.0,
  "budget_basis": "process CPU time (time.process_time), 1 torch thread"
 }
