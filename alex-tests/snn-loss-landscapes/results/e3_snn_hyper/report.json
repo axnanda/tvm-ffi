@@ -1,0 +1,585 @@
+{
+ "exp": "e3_snn_hyper",
+ "script": "experiments/e3_snn_hyper.py (figures/tables regenerated with --figures; report via experiments/e3_snn_hyper_report.py)",
+ "result_files": [
+  "results/e3_snn_hyper/analysis.json",
+  "results/e3_snn_hyper/raw/T16_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/T16_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/T1_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/T1_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/T2_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/T2_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/T4_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/T4_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/base_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/base_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/beta0.5_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/beta0.99_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/beta0_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/centerTrue_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T16_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T16_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T16_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T1_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T1_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T1_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T4_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T4_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k1_T4_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T16_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T16_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T16_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T1_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T1_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T1_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T4_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T4_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k25_T4_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k4_T16_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k4_T16_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k4_T1_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k4_T1_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k4_T4_L2_seed0.npz",
+  "results/e3_snn_hyper/raw/depth_k4_T4_L6_seed0.npz",
+  "results/e3_snn_hyper/raw/detachTrue_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/gain0.5_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/gain2_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/k1_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/k1_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/k25_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/k25_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/k2_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/k2_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/k8_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/k8_L4_seed1.npz",
+  "results/e3_snn_hyper/raw/readmembrane_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/resethard_L4_seed0.npz",
+  "results/e3_snn_hyper/raw/suratan_L4_seed0.npz",
+  "results/e3_snn_hyper/report.json",
+  "results/e3_snn_hyper/run.log",
+  "results/e3_snn_hyper/run_meta.json",
+  "results/e3_snn_hyper/summary.json",
+  "results/e3_snn_hyper/verdicts.json"
+ ],
+ "figures": [
+  "figures/e3_snn_hyper_block_scaling.png",
+  "figures/e3_snn_hyper_categorical.png",
+  "figures/e3_snn_hyper_depth_interaction.png",
+  "figures/e3_snn_hyper_k_scaling.png",
+  "figures/e3_snn_hyper_losses.png",
+  "figures/e3_snn_hyper_spectra.png",
+  "figures/e3_snn_hyper_sweep_T.png",
+  "figures/e3_snn_hyper_sweep_beta.png",
+  "figures/e3_snn_hyper_sweep_gain_mult.png",
+  "figures/e3_snn_hyper_sweep_k.png"
+ ],
+ "n_runs": 52,
+ "n_runs_planned": 62,
+ "conditions": {
+  "base": {
+   "L": 4,
+   "T": 8,
+   "k": 4.0,
+   "beta": 0.9,
+   "detach_reset": false,
+   "reset": "soft",
+   "surrogate": "sigmoid",
+   "readout": "rate",
+   "gain_mult": 1.0,
+   "center_features": false
+  },
+  "sweeps": {
+   "T": [
+    1,
+    2,
+    4,
+    8,
+    16
+   ],
+   "k": [
+    1.0,
+    2.0,
+    4.0,
+    8.0,
+    25.0
+   ],
+   "beta": [
+    0.0,
+    0.5,
+    0.9,
+    0.99
+   ],
+   "detach_reset": [
+    false,
+    true
+   ],
+   "reset": [
+    "soft",
+    "hard"
+   ],
+   "surrogate": [
+    "sigmoid",
+    "atan"
+   ],
+   "readout": [
+    "rate",
+    "membrane"
+   ],
+   "gain_mult": [
+    0.5,
+    1.0,
+    2.0
+   ],
+   "center_features": [
+    false,
+    true
+   ]
+  },
+  "depth_grid": {
+   "k": [
+    1.0,
+    4.0,
+    25.0
+   ],
+   "T": [
+    1,
+    4,
+    16
+   ],
+   "L": [
+    2,
+    4,
+    6
+   ]
+  },
+  "seeds": [
+   0,
+   1
+  ],
+  "steps": 400,
+  "lr": 0.005,
+  "n": 256,
+  "d_in": 16,
+  "width": 16,
+  "setting": "B (r=2, d_out=6)"
+ },
+ "key_tables_markdown": {
+  "base": "| step | n_seeds | lam(Ho) | lam(symH) | maxRe(H) | ro_top | tr(Ho) | r_paper | r_split | coh | ndom(Ho) | ndom(ReH) | zero(Ho) | neg(symH) | asym | Hf/Ho | rate | mu2/trM | loss |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| init | 2 | 2.82 | 1.57 | 1.14 | 0.743 | 36 | 5.73 | 2.06 | 1.88 | 3.5 | 5 | 0.00579 | 0.532 | 0.969 | 1.49 | 0.232 | 0.555 | 1.39 |\n| end | 2 | 6.86 | 1.75 | 1.04 | 1.04 | 69.5 | 5.37 | 2.82 | 1.79 | 2 | 6 | 0.00289 | 0.486 | 1.08 | 0.928 | 0.258 | 0.5 | 0.0181 |\n",
+  "k": "| k | n | lam(Ho)@init | lam(Ho)@end | lam(symH)@end | maxRe(H)@end | ro_top@end | tr(Ho)@end | r_paper@end | r_split@end | coh@end | ndom(Ho)@end | ndom(ReH)@end | zero(Ho)@end | neg(symH)@end | asym@end | Hf/Ho@end | rate@end | mu2/trM@end | loss@end |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| 1 | 2 | 2.13 | 3.37 | 1.94 | 1.59 | 1.59 | 27.9 | 6.5 | 3.49 | 2.12 | 8 | 6 | 0.00347 | 0.455 | 0.726 | 0.606 | 0.299 | 0.53 | 0.0267 |\n| 2 | 2 | 2.71 | 5.29 | 1.84 | 1.23 | 1.23 | 49.2 | 5.58 | 3.45 | 2.2 | 2 | 6 | 0 | 0.469 | 0.994 | 0.847 | 0.272 | 0.518 | 0.0189 |\n| 4 | 2 | 2.82 | 6.86 | 1.75 | 1.04 | 1.04 | 69.5 | 5.37 | 2.82 | 1.79 | 2 | 6 | 0.00289 | 0.486 | 1.08 | 0.928 | 0.258 | 0.5 | 0.0181 |\n| 8 | 2 | 3.01 | 7.09 | 1.61 | 0.977 | 0.977 | 91.5 | 4.41 | 3.12 | 1.74 | 2 | 6 | 0.00405 | 0.486 | 1.01 | 1.03 | 0.257 | 0.497 | 0.0207 |\n| 25 | 2 | 1.66e+06 | 4.93e+04 | 2.86e+04 | 2.82e+04 | 1.29 | 9.31e+04 | 26.5 | 7.93 | 1 | 2 | 1 | 0.222 | 0.421 | 0.691 | 0.729 | 0.269 | 0.621 | 0.446 |\n",
+  "T": "| T | n | lam(Ho)@init | lam(Ho)@end | lam(symH)@end | maxRe(H)@end | ro_top@end | tr(Ho)@end | r_paper@end | r_split@end | coh@end | ndom(Ho)@end | ndom(ReH)@end | zero(Ho)@end | neg(symH)@end | asym@end | Hf/Ho@end | rate@end | mu2/trM@end | loss@end |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| 1 | 2 | 0.462 | 2.41 | 2.06 | 1.96 | 1.96 | 37 | 4.2 | 2.37 | 1.24 | 6 | 6 | 0.0556 | 0.473 | 0.372 | 0.32 | 0.321 | 0.327 | 0.122 |\n| 2 | 2 | 1.01 | 2.05 | 1.35 | 1.19 | 1.19 | 29.8 | 3.87 | 2.39 | 1.72 | 2 | 6 | 0.00984 | 0.491 | 0.573 | 0.544 | 0.28 | 0.35 | 0.0562 |\n| 4 | 2 | 1.95 | 3.41 | 1.31 | 0.962 | 0.962 | 42.5 | 4.4 | 2.88 | 2.36 | 2 | 6 | 0 | 0.499 | 0.876 | 0.84 | 0.262 | 0.415 | 0.0357 |\n| 8 | 2 | 2.82 | 6.86 | 1.75 | 1.04 | 1.04 | 69.5 | 5.37 | 2.82 | 1.79 | 2 | 6 | 0.00289 | 0.486 | 1.08 | 0.928 | 0.258 | 0.5 | 0.0181 |\n| 16 | 2 | 3.34 | 9.94 | 1.93 | 0.978 | 0.978 | 97.2 | 5.53 | 3.05 | 1.83 | 1.5 | 6 | 0.00579 | 0.466 | 1.17 | 0.952 | 0.258 | 0.519 | 0.0111 |\n",
+  "beta": "| beta | n | lam(Ho)@init | lam(Ho)@end | lam(symH)@end | maxRe(H)@end | ro_top@end | tr(Ho)@end | r_paper@end | r_split@end | coh@end | ndom(Ho)@end | ndom(ReH)@end | zero(Ho)@end | neg(symH)@end | asym@end | Hf/Ho@end | rate@end | mu2/trM@end | loss@end |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| 0 | 1 | 0.0778 | 1.35 | 1.2 | 1.15 | 1.15 | 21.2 | 4.38 | 2.87 | 1.17 | 6 | 6 | 0.015 | 0.473 | 0.348 | 0.355 | 0.249 | 0.445 | 0.0827 |\n| 0.5 | 1 | 0.265 | 2.01 | 1.21 | 1.01 | 1.01 | 25.9 | 4.34 | 2.15 | 1.99 | 2 | 6 | 0 | 0.51 | 0.692 | 0.627 | 0.248 | 0.448 | 0.0274 |\n| 0.9 | 2 | 2.82 | 6.86 | 1.75 | 1.04 | 1.04 | 69.5 | 5.37 | 2.82 | 1.79 | 2 | 6 | 0.00289 | 0.486 | 1.08 | 0.928 | 0.258 | 0.5 | 0.0181 |\n| 0.99 | 1 | 3.79 | 7.08 | 1.58 | 0.878 | 0.878 | 95 | 4.56 | 2.14 | 1.76 | 2 | 6 | 0 | 0.485 | 1.12 | 0.955 | 0.243 | 0.5 | 0.0193 |\n",
+  "gain_mult": "| gain_mult | n | lam(Ho)@init | lam(Ho)@end | lam(symH)@end | maxRe(H)@end | ro_top@end | tr(Ho)@end | r_paper@end | r_split@end | coh@end | ndom(Ho)@end | ndom(ReH)@end | zero(Ho)@end | neg(symH)@end | asym@end | Hf/Ho@end | rate@end | mu2/trM@end | loss@end |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| 0.5 | 1 | 0.0413 | 3.62 | 1.24 | 0.814 | 0.814 | 46.7 | 4.45 | 2.12 | 2.41 | 2 | 6 | 0 | 0.486 | 0.998 | 0.874 | 0.216 | 0.422 | 0.0136 |\n| 1 | 2 | 2.82 | 6.86 | 1.75 | 1.04 | 1.04 | 69.5 | 5.37 | 2.82 | 1.79 | 2 | 6 | 0.00289 | 0.486 | 1.08 | 0.928 | 0.258 | 0.5 | 0.0181 |\n| 2 | 1 | 14.3 | 6.57 | 1.55 | 1.02 | 1.02 | 116 | 3.44 | 1.52 | 1.99 | 1 | 6 | 0.0116 | 0.459 | 1.04 | 0.999 | 0.281 | 0.539 | 0.297 |\n",
+  "k_exponents": "| metric | exponent@init | exponent@end |\n|---|---|---|\n| lam_max(H_o) | 3.66 (R2 0.63) | 2.55 (R2 0.67) |\n| lam_max(sym H) | 2.79 (R2 0.67) | 2.31 (R2 0.55) |\n| max Re eig(H) | 2.93 (R2 0.70) | 2.36 (R2 0.53) |\n| readout block top | -0.00 (R2 0.00) | -0.07 (R2 0.11) |\n| max hidden block Re | 3.05 (R2 0.74) | 3.76 (R2 0.77) |\n| trace(H_o) | 3.20 (R2 0.68) | 2.27 (R2 0.73) |\n| trace(H) | 2.94 (R2 0.73) | 1.64 (R2 0.40) |\n| ||H||_F | 2.90 (R2 0.72) | 2.23 (R2 0.59) |\n| ||H_o||_F | 3.53 (R2 0.63) | 2.46 (R2 0.66) |\n| ratio_paper(H_o) | 0.80 (R2 0.45) | 0.34 (R2 0.33) |\n| ratio_split(H_o) | 0.51 (R2 0.37) | 0.15 (R2 0.12) |\n| coherence(H_o) | -0.20 (R2 0.72) | -0.23 (R2 0.82) |\n| n_dom(H_o) | -0.37 (R2 0.29) | -0.36 (R2 0.42) |\n| zero frac(H_o) | 1.17 (R2 0.46) | 1.14 (R2 0.48) |\n| neg frac(sym H) | -0.06 (R2 0.71) | -0.02 (R2 0.16) |\n| asymmetry(H) | -0.20 (R2 0.54) | -0.08 (R2 0.06) |\n| |H_f|/|H_o| | 0.04 (R2 0.01) | 0.03 (R2 0.01) |\n| mean rate | -0.00 (R2 0.00) | -0.03 (R2 0.13) |\n| window frac | -0.86 (R2 0.99) | -0.92 (R2 0.99) |\n",
+  "block_exponents": "| block | k-exp@init | k-exp@end | T-exp@init | T-exp@end |\n|---|---|---|---|---|\n| W1 | 4.67 | 3.45 | 0.56 | 0.81 |\n| W2 | 2.38 | 2.07 | 0.70 | 1.27 |\n| W3 | 0.75 | 1.19 | 0.81 | 0.88 |\n| W4 | -0.00 | -0.07 | 0.82 | -0.23 |\n",
+  "categorical": "| condition | n | lam(Ho)@init | asym@init | lam(Ho)@end | lam(symH)@end | maxRe(H)@end | ro_top@end | tr(Ho)@end | r_paper@end | r_split@end | coh@end | ndom(Ho)@end | ndom(ReH)@end | zero(Ho)@end | neg(symH)@end | asym@end | Hf/Ho@end | rate@end | mu2/trM@end | loss@end |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| base | 2 | 2.82 | 0.969 | 6.86 | 1.75 | 1.04 | 1.04 | 69.5 | 5.37 | 2.82 | 1.79 | 2 | 6 | 0.00289 | 0.486 | 1.08 | 0.928 | 0.258 | 0.5 | 0.0181 |\n| detach_reset=True | 1 | 54.6 | 0.885 | 164 | 3.58 | 2.44 | 0.667 | 3.93e+03 | 2.16 | 2.17 | 1.04 | 1 | 1 | 0.0104 | 0.48 | 1.12 | 1 | 0.209 | 0.414 | 0.0198 |\n| reset=hard | 1 | 1.47 | 0.843 | 3.72 | 2.14 | 1.77 | 1.77 | 41.5 | 5.81 | 1.95 | 2.11 | 2 | 6 | 0 | 0.477 | 0.696 | 0.643 | 0.331 | 0.558 | 0.0522 |\n| surrogate=atan | 1 | 2.75 | 0.911 | 6.11 | 1.43 | 0.858 | 0.858 | 74.9 | 4.73 | 1.94 | 1.68 | 2 | 6 | 0.00116 | 0.502 | 1.05 | 1 | 0.236 | 0.488 | 0.0167 |\n| readout=membrane | 1 | 26.8 | 1 | 11.5 | 5.28 | 4 | 4 | 138 | 5.1 | 2.81 | 2.18 | 2 | 6 | 0.00579 | 0.486 | 0.865 | 0.786 | 0.191 | 0.484 | 0.0515 |\n| center_features=True | 1 | 2.3 | 0.936 | 7.99 | 0.367 | 0.229 | 0.156 | 101 | 4.52 | 2.97 | 1.76 | 2 | 1 | 0.0104 | 0.472 | 1.08 | 1.02 | 0.327 | 0.901 | 0.0468 |\n",
+  "depth_interaction_end": "| k | T | coh@L2 | coh@L4 | coh@L6 | r_split@L2 | r_split@L4 | r_split@L6 | lam(Ho)@L2 | lam(Ho)@L4 | lam(Ho)@L6 | ndom@L2 | ndom@L4 | ndom@L6 |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| 1 | 1 | 1 | 1.02 | 1.04 | 2.18 | 2.43 | 1.94 | 1.5 | 2.86 | 2.33 | 6 | 6 | 6 |\n| 1 | 4 | 1.04 | 1.3 | 1.25 | 2.21 | 2.65 | 2.55 | 1.42 | 1.84 | 2.11 | 6 | 6 | 6 |\n| 1 | 16 | 1.12 | 2.76 | 3.19 | 1.65 | 3.3 | 3.31 | 1.63 | 5.18 | 6.5 | 6 | 2 | 2 |\n| 4 | 1 | 1.05 | 1.2 | 1.2 | 2.38 | 2.54 | 2.56 | 1.33 | 2.7 | 2.5 | 6 | 6 | 6 |\n| 4 | 4 | 1.16 | 2.51 | 3.46 | 1.85 | 2.66 | 2.54 | 1.68 | 2.91 | 2.86 | 6 | 2 | 2 |\n| 4 | 16 | 1.12 | 1.69 | 3.1 | 4.32 | 2.12 | 4.19 | 1.99 | 8.84 | 16.1 | 6 | 1 | 2 |\n| 25 | 1 | 1.01 | 1.03 | 1.44 | 1.7 | 6.4 | 759 | 6.13 | 33.1 | 8.99e-22 | 3 | 1 | 2 |\n| 25 | 4 | 1 | 1.01 | 1.01 | 3.5 | 3.37 | 11.8 | 38.8 | 1.47e+03 | 6.53e+04 | 8 | 3 | 2 |\n| 25 | 16 | 1 | 1 | 1.05 | 13.3 | 6.07 | 9.42 | 9.12e+05 | 1.12e+06 | 1.62e+09 | 1 | 2 | 2 |\n"
+ },
+ "k_loglog_fits": {
+  "coh_Ho.lambda_max|init": {
+   "exponent": 3.6626128881476636,
+   "R2": 0.6280466611665514
+  },
+  "coh_H.lambda_max|init": {
+   "exponent": 2.7935739738390315,
+   "R2": 0.6687184979062042
+  },
+  "max_re_eigH|init": {
+   "exponent": 2.9317581513815316,
+   "R2": 0.7018116342235692
+  },
+  "readout_block_top|init": {
+   "exponent": -3.713162214913736e-17,
+   "R2": 0.0
+  },
+  "max_hidden_block_re|init": {
+   "exponent": 3.053139961581536,
+   "R2": 0.7360016354342966
+  },
+  "trace_Ho|init": {
+   "exponent": 3.2004676075055314,
+   "R2": 0.6780979037756578
+  },
+  "trace_H|init": {
+   "exponent": 2.943001043599039,
+   "R2": 0.7348607321272389
+  },
+  "H_norm|init": {
+   "exponent": 2.898076399024306,
+   "R2": 0.7162150343421952
+  },
+  "Ho_norm|init": {
+   "exponent": 3.5346806404842335,
+   "R2": 0.6344275187853611
+  },
+  "cluster_Ho.ratio_paper|init": {
+   "exponent": 0.8027023568097854,
+   "R2": 0.44722363242552043
+  },
+  "cluster_Ho.ratio_split|init": {
+   "exponent": 0.507632235752428,
+   "R2": 0.3662558677968736
+  },
+  "coh_Ho.coherence|init": {
+   "exponent": -0.19923858969253494,
+   "R2": 0.722765842457627
+  },
+  "dominant_count_Ho|init": {
+   "exponent": -0.37284705835785564,
+   "R2": 0.29346134027286197
+  },
+  "zero_frac_Ho|init": {
+   "exponent": 1.1729295613076405,
+   "R2": 0.46381796543602904
+  },
+  "neg_frac_H|init": {
+   "exponent": -0.059041467678449554,
+   "R2": 0.7095786285803429
+  },
+  "asymmetry_H|init": {
+   "exponent": -0.20465827665765698,
+   "R2": 0.5365117477880443
+  },
+  "Hf_over_Ho|init": {
+   "exponent": 0.03933693542274986,
+   "R2": 0.013000538892992353
+  },
+  "spikes.mean_rate|init": {
+   "exponent": -1.1709714272664392e-16,
+   "R2": 1.1102230246251565e-16
+  },
+  "spikes.window_frac|init": {
+   "exponent": -0.8611737471367602,
+   "R2": 0.9945225212604231
+  },
+  "coh_Ho.lambda_max|end": {
+   "exponent": 2.554200009089286,
+   "R2": 0.6654689835443255
+  },
+  "coh_H.lambda_max|end": {
+   "exponent": 2.306935237362585,
+   "R2": 0.5516201894208701
+  },
+  "max_re_eigH|end": {
+   "exponent": 2.359802081127686,
+   "R2": 0.5285751161048433
+  },
+  "readout_block_top|end": {
+   "exponent": -0.07024023568906414,
+   "R2": 0.1119714469850519
+  },
+  "max_hidden_block_re|end": {
+   "exponent": 3.758461889580657,
+   "R2": 0.7740950333630549
+  },
+  "trace_Ho|end": {
+   "exponent": 2.2704571540456606,
+   "R2": 0.7311385600430966
+  },
+  "trace_H|end": {
+   "exponent": 1.6365545031005992,
+   "R2": 0.398129434527557
+  },
+  "H_norm|end": {
+   "exponent": 2.2319134880237925,
+   "R2": 0.5894323187089843
+  },
+  "Ho_norm|end": {
+   "exponent": 2.4563022595925084,
+   "R2": 0.6638400177417002
+  },
+  "cluster_Ho.ratio_paper|end": {
+   "exponent": 0.33700974176243886,
+   "R2": 0.33424326378042213
+  },
+  "cluster_Ho.ratio_split|end": {
+   "exponent": 0.14917278362739922,
+   "R2": 0.11554858307258509
+  },
+  "coh_Ho.coherence|end": {
+   "exponent": -0.2329159671753619,
+   "R2": 0.8203080185393439
+  },
+  "dominant_count_Ho|end": {
+   "exponent": -0.36262041808882206,
+   "R2": 0.4229069399822961
+  },
+  "zero_frac_Ho|end": {
+   "exponent": 1.1406042660717424,
+   "R2": 0.4760646212639693
+  },
+  "neg_frac_H|end": {
+   "exponent": -0.019855869116890388,
+   "R2": 0.16160017906348434
+  },
+  "asymmetry_H|end": {
+   "exponent": -0.07688790402216573,
+   "R2": 0.055808561753384334
+  },
+  "Hf_over_Ho|end": {
+   "exponent": 0.027942900649140828,
+   "R2": 0.01214438853318034
+  },
+  "spikes.mean_rate|end": {
+   "exponent": -0.030998940895363945,
+   "R2": 0.13363978730075654
+  },
+  "spikes.window_frac|end": {
+   "exponent": -0.9241500126608619,
+   "R2": 0.985197056055898
+  }
+ },
+ "block_loglog_fits": {
+  "k|W1|init": {
+   "exponent": 4.669338404779063,
+   "R2": 0.7130991051097892
+  },
+  "k|W2|init": {
+   "exponent": 2.383828700864019,
+   "R2": 0.6902083227722837
+  },
+  "k|W3|init": {
+   "exponent": 0.7541541010181021,
+   "R2": 0.6664533146707352
+  },
+  "k|W4|init": {
+   "exponent": -3.713162214913736e-17,
+   "R2": 0.0
+  },
+  "k|W1|end": {
+   "exponent": 3.4504238838739103,
+   "R2": 0.748453400066613
+  },
+  "k|W2|end": {
+   "exponent": 2.06993807777541,
+   "R2": 0.8044281039786885
+  },
+  "k|W3|end": {
+   "exponent": 1.1931406769170823,
+   "R2": 0.7541998052296068
+  },
+  "k|W4|end": {
+   "exponent": -0.07024023568906414,
+   "R2": 0.1119714469850519
+  },
+  "T|W1|init": {
+   "exponent": 0.5622820634526063,
+   "R2": 0.8017695896740284
+  },
+  "T|W2|init": {
+   "exponent": 0.6995047899398077,
+   "R2": 0.8296752195329216
+  },
+  "T|W3|init": {
+   "exponent": 0.8137491259774842,
+   "R2": 0.7774230848765565
+  },
+  "T|W4|init": {
+   "exponent": 0.8203265677688284,
+   "R2": 0.5202476557096809
+  },
+  "T|W1|end": {
+   "exponent": 0.806384682899242,
+   "R2": 0.9644280393926404
+  },
+  "T|W2|end": {
+   "exponent": 1.2681229700570251,
+   "R2": 0.9833731260879925
+  },
+  "T|W3|end": {
+   "exponent": 0.8785398017767857,
+   "R2": 0.861243632221708
+  },
+  "T|W4|end": {
+   "exponent": -0.2255591429700035,
+   "R2": 0.5127408371239304
+  }
+ },
+ "coherence_vs_L_slopes": {
+  "k1_T1_init": {
+   "slope": 0.06395569080752066,
+   "intercept": 0.9901251825463531
+  },
+  "k1_T1_end": {
+   "slope": 0.007884140590379547,
+   "intercept": 0.9886318850721917
+  },
+  "k1_T4_init": {
+   "slope": 0.1740273488566608,
+   "intercept": 0.9197686554832668
+  },
+  "k1_T4_end": {
+   "slope": 0.053850514983034455,
+   "intercept": 0.9836369685997839
+  },
+  "k1_T16_init": {
+   "slope": 0.4079297872151035,
+   "intercept": 0.300693279502504
+  },
+  "k1_T16_end": {
+   "slope": 0.5169853941745445,
+   "intercept": 0.28885182480959354
+  },
+  "k4_T1_init": {
+   "slope": 0.1973458379352788,
+   "intercept": 0.7728631681866044
+  },
+  "k4_T1_end": {
+   "slope": 0.03728520604867349,
+   "intercept": 1.0038951952846324
+  },
+  "k4_T4_init": {
+   "slope": 0.6600658311910579,
+   "intercept": -0.397758522243335
+  },
+  "k4_T4_end": {
+   "slope": 0.5748794063008921,
+   "intercept": 0.07426733785754273
+  },
+  "k4_T16_init": {
+   "slope": 0.5018338893927029,
+   "intercept": 0.04870054552631163
+  },
+  "k4_T16_end": {
+   "slope": 0.4944960643411886,
+   "intercept": -0.008222411177016605
+  },
+  "k25_T1_init": {
+   "slope": 0.08218663087540219,
+   "intercept": 0.8314854307769196
+  },
+  "k25_T1_end": {
+   "slope": 0.10748538238983416,
+   "intercept": 0.7271042553849092
+  },
+  "k25_T4_init": {
+   "slope": 0.03533045377362199,
+   "intercept": 0.9155714447396496
+  },
+  "k25_T4_end": {
+   "slope": 0.0012957741275233913,
+   "intercept": 0.9991879298255961
+  },
+  "k25_T16_init": {
+   "slope": 0.08712609605736336,
+   "intercept": 0.7676637438470633
+  },
+  "k25_T16_end": {
+   "slope": 0.011431572875582453,
+   "intercept": 0.969523518525787
+  }
+ },
+ "structure_checks": {
+  "max_lower_block_norm_overall": 0.0,
+  "max_eig_union_err_overall": 9.943841234871797e-07,
+  "max_eig_union_err_relative_overall": 4.497189160132985e-15,
+  "max_lower_over_H_norm_overall": 0.0,
+  "max_abs_imag_eigH_overall": 158.97621853192868,
+  "max_readout_block_vs_I_kron_Sigma_rel_err": 0.0,
+  "max_abs_imag_over_max_re_overall": 0.026271045848588876,
+  "frac_evals_where_maxRe_is_readout_block": 0.5576923076923077,
+  "max_asym_Ho": 0.0
+ },
+ "claim_verdicts": [
+  {
+   "claim": "C1: spectrum = r^2 dominant + r(d_in+d_out-2r) equal bulk + zeros (r=2, d_out=6 -> 4 / 36 / rest)",
+   "verdict": "fails",
+   "evidence": "No three-cluster structure in any of the 52 runs x 2 checkpoints. Data-driven dominant count of the raw update-field Jacobian Re eig(H) is d_out=6 (not r^2=4) at the end of training in 27/29 L=4 runs with k<=8 (all T, beta, gain, reset, surrogate, readout; exceptions detach_reset and center_features give 1), and the 6 values are exactly equal copies of lambda_1(Sigma_a) (base: 6 x 0.8453, next 0.2817 = lambda_2(Sigma_a)). For H_o the count is 2 (19/29 runs) or 6 (T=1, beta=0, k=1), never 4. H_o has full rank (zero fraction 0-1% for k<=8; the 5.6% at T=1 is rank deficiency of binary features) and the 'bulk' is a continuous power-law-like decay (figure e3_snn_hyper_spectra.png); sym(H) has 45-55% negative eigenvalues in every condition."
+  },
+  {
+   "claim": "C2: dominant/bulk ratio == L (uniform init) or Theta(L)",
+   "verdict": "fails",
+   "evidence": "At L=4 (base) ratio_paper(H_o)=5.4+-0.7, ratio_split=2.8+-0.9, coherence=1.79+-0.07 (end). Depth grid (seed 0): coherence(H_o) vs L has slope 0.49-0.66 (k=4,T>=4; k=1,T=16), 0.00-0.11 for T=1 (any k) and for k=25 (any T): values 1.0-1.2 at L=2, 1.7-2.8 at L=4, 3.1-3.5 at L=6 in the best case, never L. ratio_paper(H_o) grows with L only mildly and T-dependently (k=4: 3.2/4.9/6.4 for T=16, 2.9/4.2/4.8 for T=4, 3.2/4.4/4.4 for T=1); ratio_split shows no systematic L dependence (1.9-4.3). Depth alone does not set the ratio: T and k change it as much as L does."
+  },
+  {
+   "claim": "C3: H = H_o + H_f with H_f ~ residual -> 0, so H -> H_o during training",
+   "verdict": "fails",
+   "evidence": "||H_f||_F/||H_o||_F stays at 0.92-1.03 at the end of training in every L=4 condition except hard reset (0.64), T=1 (0.29) and beta=0 (0.35), although the residual fell 9x (loss 1.4 -> 0.018). asymmetry(H)=1.06-1.10 (base, end). The residual-weighted part of H does decay: the hidden diagonal blocks of H shrink by the same factor as the residual (0.104 vs 0.110, both seeds), but H_o contains hidden-layer surrogate Gauss-Newton terms that never appear in the block-upper-triangular H, so H_f does not vanish. Extreme case detach_reset=True: ||H||/||H_o|| = 0.037 at the end (H_f ~ -H_o): H_o scale x25 (lambda_max 164 vs 6.9) while H barely changes (lambda_max(sym H) 3.6 vs 1.75)."
+  },
+  {
+   "claim": "C4: the dominant/bulk gap is caused by depth, not by data-covariance imbalance",
+   "verdict": "fails",
+   "evidence": "For H (update-field Jacobian) the top cluster is the readout block I_{d_out} (x) Sigma_a (exact in all 104 evaluations) i.e. the uncentred second moment of the spike-rate features: a data/feature-covariance mechanism re-created by the nonlinearity from perfectly whitened inputs. It is governed by spike statistics: readout-block top eigenvalue at init 0.002 / 0.42 / 2.38 for gain x0.5 / x1 / x2 (mean rate 0.08 / 0.21 / 0.35, ||mu||^2/tr M 0.06 / 0.43 / 0.57), and it collapses when the readout features are centred (0.845 -> 0.156 at end; n_dom(Re H) 6 -> 1). For H_o a depth-dependent coherent part exists (coherence slope ~0.5 in L when T>=4, k<=4) but it is absent at T=1 or k=25, so the gap is not caused by depth alone."
+  },
+  {
+   "claim": "C5: GD preserves balancedness so the ratio stays == L during training",
+   "verdict": "not_tested",
+   "evidence": "No balanced init in this experiment (kaiming only). Observed drift between init and 400 Adam steps at base: coherence 1.88 -> 1.79, ratio_split 2.06 -> 2.82, ratio_paper 5.7 -> 5.4, lambda_max(H_o) 2.8 -> 6.9: the ratios are not conserved, but Adam is not GD."
+  },
+  {
+   "claim": "Coherence bound lambda_max(H_o) <= L max_l lambda_max(B_ll), saturated (== L) in the paper's linear case",
+   "verdict": "holds",
+   "evidence": "coherence(H_o) in [1.00, 3.72] in all runs (max 3.72 at L=6, k=4, T=4 init), i.e. bound always satisfied and never saturated (would be 2/4/6)."
+  },
+  {
+   "claim": "P1 (theory notes): C_SNN(L) < L; question whether it grows linearly with slope < 1 or saturates",
+   "verdict": "holds",
+   "evidence": "Slopes of coherence(H_o) vs L (L=2,4,6; end): 0.58 (k=4,T=4), 0.49 (k=4,T=16), 0.52 (k=1,T=16), 0.04-0.05 (k=1/4, T=1 or T=4 with k=1), 0.00-0.11 (k=25). Sub-linear growth that needs T>=4 and moderate k; coherence ~1 (no cross-layer coherence at all) for T=1 and for k=25."
+  },
+  {
+   "claim": "P2 (theory notes): dominant count tracks d_out, top eigenvectors live in W_L, ratio governed by ||mu||^2/lambda(Cov_a)",
+   "verdict": "partially",
+   "evidence": "Holds exactly for H: top of Re eig(H) = d_out copies of lambda_1(Sigma_a) (27/29 runs), readout-block top = max Re eig(H) at the end in 27/29 runs, collapses under centring and scales with the spike rate. Only partially for H_o: n_dom(H_o)=2 at L=4 (6 at L=2 or T=1), top-6 eigenvector energy in W_L only 0.13-0.22 at the end (0.20-0.55 at init), and lambda_max(H_o) survives centring (7.99 vs 6.86) because it comes from a coherent hidden-layer direction, not from the readout block."
+  },
+  {
+   "claim": "P3 (theory notes): surrogate slope k changes only an overall scale (H ~ k^2); counts/coherence are k-independent",
+   "verdict": "partially",
+   "evidence": "Scale is NOT ~k^2. For k in {1,2,4,8}: lambda_max(H_o) 2.1/2.7/2.8/3.0 (init), 3.4/5.3/6.9/7.1 (end), trace(H_o) 28/49/70/92 (end); then an explosion at k=25 (lambda_max(H_o) 1.7e6 init, 4.9e4 end). Log-log fits over all k give exponents 3.7/2.6 (lambda_max H_o, init/end, R^2 0.63/0.67), 2.8/2.3 (sym H), 2.9/2.4 (max Re eig H), 3.2/2.3 (trace H_o) but the fits are poor because the dependence is flat-then-explosive. Per-block: readout block exponent 0.00 (exactly k-independent), W3 (1 surrogate factor) 0.75/1.19, W2 2.38/2.07, W1 4.67/3.45 -- roughly k^(1.2 x number of surrogate factors), not k^(2 x), because the fraction of (sample,time,neuron) inside the surrogate window scales as k^-0.9. Structure for k<=8: n_dom(Re H)=6, neg fraction 0.45-0.49, ||H_f||/||H_o|| 0.6-1.0 nearly k-invariant; coherence(H_o) drifts 2.1 -> 1.7 (exponent -0.23, R^2 0.82) and ratio_paper 6.5 -> 4.4; at k=25 everything changes (coherence 1.0, ratio_paper 26, zero fraction 0.22, loss 0.45 = training fails)."
+  },
+  {
+   "claim": "Theory notes section 5: SNN update-field Jacobian is block upper-triangular; eig(H) = union of diagonal-block eigs; readout block = I (x) Sigma_a",
+   "verdict": "holds",
+   "evidence": "Over all 104 full-H evaluations (every T, k, beta, reset, detach_reset, surrogate, readout, gain, centring, L in {2,4,6}): max Frobenius norm of the strictly lower-left layer blocks = 0.0 exactly; eigenvalue-union error <= 4.5e-15 relative; readout block vs I kron Sigma_a relative error = 0.0 (Sigma of centred features when center_features=True); max |Im eig(H)| / max Re eig(H) <= 0.026; H_o exactly symmetric."
+  },
+  {
+   "claim": "(ii) T acts like extra depth (coherence/ratio increase with T)",
+   "verdict": "partially",
+   "evidence": "Scale grows with T (lambda_max(H_o) 0.46 -> 3.3 init, 2.4 -> 9.9 end for T=1..16; block exponents T^0.6-0.8 at init). Coherence(H_o) at end: 1.24 (T=1), 1.72, 2.36, 1.79, 1.83 -- rises from T=1 to T=4 then saturates; ratio_paper 4.2 -> 5.5 and ratio_split 2.4 -> 3.0 change by < 30% from T=1 to T=16. T is necessary for depth to produce coherence (T=1: coherence ~1.0-1.2 at every L) but T itself is not 'extra depth'. asymmetry(H) at end grows strongly with T: 0.37, 0.57, 0.88, 1.08, 1.17; ||mu||^2/tr M grows 0.33 -> 0.52."
+  },
+  {
+   "claim": "(iii) detach_reset / hard reset change the asymmetry of H",
+   "verdict": "partially",
+   "evidence": "detach_reset=True: asymmetry(H) 0.885 (init) / 1.117 (end) vs base 0.969+-0.010 / 1.083+-0.019 -- unchanged; but it multiplies the surrogate Gauss-Newton scale by 20-25x (lambda_max(H_o) 54.6 / 164 vs 2.8 / 6.9), kills cross-layer coherence of H_o (1.04) and makes H_f ~ -H_o (||H||/||H_o|| = 0.037). reset=hard: asymmetry 0.843 / 0.696 (end: -35%), ||H_f||/||H_o|| 0.64, lambda_max(H_o) 3.7, coherence 2.11, higher rate 0.33. The asymmetry is generated by the temporal recurrence through the membrane leak, not by the reset path: at end asymmetry = 0.35 (beta=0), 0.69 (beta=0.5), 1.08 (beta=0.9), 1.12 (beta=0.99) and 0.37 at T=1."
+  },
+  {
+   "claim": "(iv) spike rate (init gain) controls the feature-mean spike and the dominant count",
+   "verdict": "holds",
+   "evidence": "At init (seed 0): mean rate 0.082 / 0.208 / 0.354, ||mu||^2 2.4e-4 / 0.32 / 2.4, ||mu||^2/tr M 0.06 / 0.43 / 0.57, readout-block top 0.002 / 0.42 / 2.38, lambda_max(H_o) 0.041 / 2.6 / 14.3 for gain x0.5 / x1 / x2; n_dom(Re H) 9 / 2 / 3, n_dom(H_o) 1 in all. After 400 Adam steps the rate statistics converge (rate 0.22-0.28, ||mu||^2/tr M 0.42-0.54, readout top 0.81-1.02) and n_dom(Re H) = 6 = d_out for all three gains; gain x2 trains poorly (loss 0.30) and x0.5 starts almost silent (window fraction 0.06)."
+  },
+  {
+   "claim": "(v) centring the readout features collapses the feature-mean spike",
+   "verdict": "partially",
+   "evidence": "Collapses in H: readout block = I kron Cov_a, top 0.138 (init) / 0.156 (end) vs 0.42 / 0.845 uncentred; max Re eig(H) 0.60 / 0.229 (vs 1.14 / 1.04); n_dom(Re H) 2 / 1 (vs 2 / 6); top-6 eigenvector energy in W_L 0.03 / 0.01. Does NOT collapse lambda_max(H_o): 2.30 / 7.99 (base 2.6 / 5.5 seed 0), n_dom(H_o)=2, coherence 1.76, ratio_split 2.97 -- the top eigenvalue of the surrogate Gauss-Newton matrix is a coherent hidden-layer direction unrelated to the feature mean. Single seed (seed-1 replicate skipped by budget)."
+  }
+ ],
+ "anomalies": [
+  "Surrogate-gradient explosion through the non-detached soft reset at k=25 (sigmoid, sg'(0)=k/4=6.25 > 1): |d u_t / d u_{t-1}| = |beta - theta sg'(v)| up to ~5.4 compounds over T, giving lambda_max(H_o) up to 2.0e12 (L=2,T=16, init), 3.7e12 (L=4,T=16) and 2.2e14 (L=6,T=16), ratio_split up to 1.5e7, one dominating first-layer block (coherence 1.00) and failed training (end loss 0.41-0.83 for k=25 vs 0.01-0.03 for k<=8). Real behaviour, not a bug (finite differences agree to 1e-9 at k=4; eigen-union error relative 4.5e-15 even at 1e14).",
+  "Dead network: k=25, T=1, L=6 never trains (loss 1.000 at init and end, mean rate 0.058, lambda_max(H_o)=9e-22); k=25, T=1, L=4 trains poorly (loss 0.73). Deep nets with T=1 are nearly silent at kaiming init (rate 0.058-0.097).",
+  "cluster_stats zero_count uses tol relative to max|eig|, so in the exploding regime 20-48% of H_o eigenvalues count as 'zero' (k=25) although H_o has full numerical rank elsewhere; interpret zero fractions at k=25 as a scale artefact.",
+  "Data-driven dominant count of H_o at init is seed-fragile (seed 0: 1, seed 1: 6 at base; the largest log-gap is ambiguous on a continuous spectrum); at the end both seeds give 2. ratio_split at end also varies 2x between seeds (1.96 vs 3.67).",
+  "detach_reset=True gives a 20-25x larger surrogate Gauss-Newton H_o (its top eigenvector sits entirely in W1) with no corresponding change of H; the Fisher/GN proxy used by second-order SNN methods is dominated by terms that are not in the update-field Jacobian.",
+  "readout='membrane' multiplies the readout block by the leaky-integration gain (readout-block top 4.3 / 4.0, initial loss 5.97) and gives n_dom(Re H)=14 at init; after training n_dom(Re H)=6 like the rate readout.",
+  "T=1 and beta=0 behave alike (asymmetry 0.37 / 0.35, ||H_f||/||H_o|| 0.29 / 0.35, n_dom(H_o)=6): without a leak path the update-field Jacobian is much closer to symmetric.",
+  "max |Im eig(H)| reaches 159 in absolute terms (k=25) but is <= 2.6% of max Re eig(H) in every evaluation; complex pairs are a small perturbation."
+ ],
+ "reductions": [
+  "SKIPPED beta0_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED beta0.5_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED beta0.99_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED detachTrue_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.0 min > budget 60.0 min",
+  "SKIPPED resethard_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.2 min > budget 60.0 min",
+  "SKIPPED suratan_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED readmembrane_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.2 min > budget 60.0 min",
+  "SKIPPED gain0.5_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED gain2_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED centerTrue_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "Depth interaction (k in {1,4,25} x T in {1,4,16} x L in {2,4,6}) run with seed 0 only (as specified); 6 extra L=4 cells (k in {1,25} x T in {1,4,16}) were added so every (k,T) line has three L values; the k=4 line at L=4 uses the T-sweep runs.",
+  "Budget accounting: 4 other experiments shared the 4 CPUs (load 5-7), so the guard was switched to process CPU time (time.process_time) with a 60 CPU-min budget; full run = 60.9 CPU-min, 63.6 wall-min (plus a 9.8-min smoke run). The 10 skipped runs are seed-1 replicates of the beta / detach_reset / reset / surrogate / readout / gain / center_features conditions; those effects are single-seed (seed-to-seed spread at base, end: asymmetry +-0.02, coherence +-0.07, lambda_max(H_o) +-1.4, ratio_split +-0.85).",
+  "The container restarted once (usage limit) after the smoke run; the 4 full-run conditions completed before the restart were kept via --resume (identical data-collection code)."
+ ],
+ "wall_minutes": 63.618512562910716,
+ "notes": [
+  "No library bug found. Finite-difference check of H at base: relative errors 1.2e-9, 1.1e-9. gain_mult=1 reproduces the default kaiming init exactly.",
+  "All runs: n=256, d_in=16, width 16, setting B (r=2, d_out=6), MSE, kaiming init (gain sqrt(2) x multiplier), Adam lr 5e-3, 400 full-batch steps, float64, 1 torch thread; full H (jacfwd(jacrev)) and H_o at init and at step 400; raw non-symmetric eigenvalues of H stored in raw/*.npz (eigH_raw_re_step*, eigH_raw_im_step*) next to eig_Ho_step* and eig_symH_step*.",
+  "Base-config numbers (mean of 2 seeds; init -> end): lambda_max(H_o) 2.82 -> 6.86, lambda_max(sym H) 1.57 -> 1.75, max Re eig(H) 1.14 -> 1.04, readout-block top 0.74 -> 1.04, trace(H_o) 36 -> 70, ratio_paper 5.7 -> 5.4, ratio_split 2.1 -> 2.8, coherence 1.88 -> 1.79, n_dom(H_o) 3.5 -> 2, n_dom(Re H) 5 -> 6, zero frac(H_o) 0.006 -> 0.003, neg frac(sym H) 0.53 -> 0.49, asymmetry 0.97 -> 1.08, ||H_f||/||H_o|| 1.49 -> 0.93, mean rate 0.23 -> 0.26, ||mu||^2/tr M 0.56 -> 0.50, loss 1.39 -> 0.018."
+ ]
+}

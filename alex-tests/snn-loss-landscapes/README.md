@@ -236,7 +236,69 @@ input coordinates scaled by 10, `kappa = 100`, trace 412). 108 runs; `results/e4
   directly. "Depth, not data" is a property of the balanced-init construction, not of deep linear nets
   in general.
 
-### 4.7 e3 (SNN hyper-parameters), e5 (real data), e6 (training dynamics)
+### 4.7 e5: a real classification task (sklearn digits, 10 classes)
+
+PCA-whitened `d_in = 16`, `C = d_out = 10`, 1437 / 360 train / test, Adam 1000 steps on the full training
+split, Hessians on a fixed 256-sample subset; MSE on one-hot targets (primary, `r = 10`, so the paper
+predicts `r^2 = 100` dominant and 60 bulk eigenvalues) and cross-entropy (secondary); kinds SNN / ReLU /
+linear, `L in {2, 3, 4, 6}`, 2 seeds. `results/e5_real_data/`, `figures/e5_real_data_*.png`.
+
+| kind, MSE | test acc (`L = 2..6`) | gap at index 100 (`eig[100]/eig[101]`) | gap at index 10 | data-driven dominant count, end | coherence init -> end | `||H_f||/||H_o||` end |
+|---|---|---|---|---|---|---|
+| SNN | 0.93 / 0.95 / 0.95 / 0.92 | 1.01-1.03 | 1.02 / 1.11 / 1.68 / 2.04 | 1 / 10.5 / **10** / **10** | 1.19 -> 1.01, 1.70 -> 1.34, 1.85 -> 1.64, 2.34 -> 1.51 | 0.86 / 0.60 / 0.61 / 0.46 |
+| ReLU | 0.91 / 0.93 / 0.84 / 0.88 | 1.01-1.02 | 1.05-1.32 | 6 / 7 / 3.5 / 1.5 | 1.45 -> 1.18 ... 2.57 -> 1.87 | 0.02-0.04 |
+| linear | 0.90 (all `L`) | 1.03-1.05 | 1.03-1.04 | 1-3.5 | 1.44 -> 1.41 ... 2.89 -> 2.18 | 0.04-0.09 |
+
+* No kind shows a gap at index 100 (C1 fails on real data for every architecture, including linear
+  nets, which converge to the same least-squares optimum for every `L` with rank 160 = `r^2` + bulk
+  non-zero eigenvalues but a smooth decay). The fixed-index ratio grows with `L` (SNN 4.8 -> 10.5) but
+  `gap100 ~ 1.03`.
+* The SNN trained with MSE develops a cluster of exactly `d_out = C = 10` dominant eigenvalues during
+  training (not at init); the raw update-field Jacobian has exactly 10 eigenvalues equal to
+  `lambda_1(Sigma_a)` and 10 equal to `lambda_2(Sigma_a)`, and the 10 eigenvectors carry 73-84 % of
+  their energy along the single readout feature-mean direction. Because `d_out = C`, counting cannot
+  separate "C class means" from "`d_out` copies of one feature mean"; the eigenvectors do, and it is the
+  latter (class-mean directions beyond `mu` carry 1-3 %). Under cross-entropy the cluster disappears
+  (the softmax output curvature vanishes on confident samples).
+* Coherence is far below `L` for every kind (SNN 1.0-1.6 at the end) and *decreases* during training.
+* `||H_f||/||H_o||` of the SNN converges to the structural floor predicted by e7,
+  `||hidden-diagonal + lower blocks of H_o|| / ||H_o||` = 0.85 / 0.57 / 0.57 / 0.44 (measured 0.86 / 0.60 /
+  0.61 / 0.46): the residual-weighted part does vanish, but `H` can never equal `H_o` because `H` lacks the
+  hidden-layer Gauss-Newton blocks.
+
+### 4.8 e6: do the landscapes evolve the same way? (full-batch GD, `L = 4`, 1500 steps)
+
+Setting B, 2 seeds, GD at `lr = 0.5 / lambda_max(sym H_0)`; `H_o` every 25 steps, full `H` every 125
+steps; kinds LIF-SNN (GD and Adam), balanced linear, Gaussian linear, ReLU (GD and Adam), smooth SNN.
+`results/e6_training_dynamics/`, `figures/e6_training_dynamics_*.png`.
+
+| run | loss 0 -> 1500 | `||H_f||/||H_o||` 0 -> 750 -> 1500 | `H_f` decay rate (per step, late fit, R^2) | `d log(H_f/H_o) / d log(loss)` | `ratio_paper(H_o)` 0 -> end | coherence 0 -> end | asymmetry 0 -> end | steps with loss increase |
+|---|---|---|---|---|---|---|---|---|
+| balanced linear | 1.82 -> 5e-31 | 1.50 -> 8e-16 -> 8e-16 | 0.066 (1.00) | 0.50 | 4.00 -> 4.05 | 4.00 -> 3.95 | 0 | 0 (round-off only) |
+| Gaussian linear | 3.83 -> 2.3e-4 | 0.74 -> 5.9e-3 -> 2.9e-3 | 1.4e-3 (0.92) | 0.55 | 2.95 -> 2.97 | 2.53 -> 2.26 | 0 | 0 |
+| ReLU | 8.09 -> 0.19 | 0.82 -> 0.098 -> 0.049 | 1.1e-3 (0.98) | 0.76 | 6.1 -> 6.2 | 2.19 -> 2.03 | 0 | 0 |
+| smooth SNN | 1.37 -> 1.6e-2 | 1.31 -> 0.050 -> 0.043 | 0.8e-3 (0.68) | 0.80 | 5.7 -> 6.3 | 1.86 -> 1.52 | 0 | 0-107 (edge of stability at `lr lambda = 2.19`) |
+| **LIF-SNN, GD** | 1.39 -> 1.7e-2 | 1.49 -> 0.95 -> **0.94** | 0.02e-3 (0.68) | 0.08-0.11 | 5.7 -> 4.2 (seed-dependent) | 1.88 -> 1.95 (max 2.11) | 0.97 -> 1.11 | **694 of 1500** (jumps up to 26 %) |
+| **LIF-SNN, Adam** | 1.39 -> 9e-3 | 1.49 -> 0.91 -> 0.87 | 0.05e-3 (0.96) | 0.08-0.11 | 5.7 -> 4.6 | 1.88 -> 1.83 | 0.97 -> 0.98 | 685 of 1500 |
+
+* The balanced linear net behaves exactly as the paper says at all 61 checkpoints: `r^2 = 4` dominant,
+  824 zeros, ratio 4.00-4.05, coherence `= L`, `H_f` decaying exponentially at 0.48 x the loss rate with
+  `R^2 = 1.00`, balancedness conserved to 2e-2.
+* The SNN's `H_f / H_o` drops to 0.95 within 125 steps and then stays flat for 1375 steps while the loss
+  falls 80-150x (`d log(H_f/H_o)/d log(loss) = 0.1` vs 0.5 for the linear net). The post-hoc block
+  decomposition shows why: `H_f` must contain `-lower(H_o)` (0.45-0.50 of `||H_o||`) because `H` has
+  exactly zero lower blocks. The surrogate Jacobian becomes *less* symmetric with training
+  (asymmetry 0.97 -> 1.11, toward the `sqrt 2` of a strictly upper-triangular matrix) as the symmetric
+  residual-weighted diagonal blocks decay.
+* The SNN's loss is non-monotone under both GD and Adam (about 46 % of steps increase the loss, jumps
+  up to 26 %), a consequence of threshold crossings under finite steps, while every ANN control is
+  monotone until it reaches the edge of stability. Measured against the surrogate Gauss-Newton curvature,
+  the SNN GD runs sit at `lr lambda_max(H_o) ~ 2`, although `lr lambda_max(sym H) = 0.35`.
+* Coherence stays at `~L/2` for the SNN throughout (never rises toward `L`), balancedness is not
+  conserved (11.9 -> 11.0), and the ratio drifts by 30-35 %: in `H_o` statistics the SNN resembles the
+  ReLU and smooth-SNN controls, but in its full-Hessian dynamics it resembles none of them.
+
+### 4.9 e3: SNN hyper-parameters
 
 _Pending; see section 9._
 
@@ -246,9 +308,10 @@ _Pending; see section 9._
 |---|---|---|---|---|---|---|
 | C1 `r^2` dominant + equal bulk + zeros | **holds** exactly (e1, e8) | partially: a 1-2 eigenvalue spike with a large gap, no `r^2` cluster, no equal bulk (e1, e2b) | holds at init, lost after training (e8) | fails: no gap at `r^2`; `d_out` cluster at `L <= 3` only (e2b, e8) | fails: same as ReLU (e2b) | **fails**: no gap at `r^2` (1.00-1.05); the only cluster has `d_out` members and lives in the readout (e2a, e8) |
 | C2 ratio `= L` / `Theta(L)` | **holds** exactly | gap grows (`ratio_split ~ 1.8 L`) but coherence `~0.4-0.5 L` | slope 0.99 at init, ~0 after training | coherence slope 0.43-0.48 at init, 0.15-0.24 after training; `ratio_split` flat | coherence slope 0.37-0.45 / 0.25; `ratio_split` flat | **fails**: coherence `~0.4-0.5 L`, gap slope ~0; only the gapless fixed-index ratio grows |
-| C3 `H_f -> 0` exponentially, `H -> H_o` | **holds** (rate matches theory) | holds | holds (`||H_f||/||H_o||` 0.01 after training) | holds (<= 0.008 after training) | holds (<= 0.025) | **fails**: 0.7-1.0 after training; `H` is not even symmetric |
+| C3 `H_f -> 0` exponentially, `H -> H_o` | **holds** (rate 0.48 x loss rate, R^2 = 1.00; e1, e6) | holds (-> 3e-3) | holds (`||H_f||/||H_o||` 0.01 after training) | holds (-> 0.002-0.05; e2b, e5, e6) | holds (-> 0.04) | **fails**: plateaus at 0.46-0.96 (the structural floor `||lower(H_o)||/||H_o||`) while the loss falls 100x; `H` is not even symmetric (e2a, e5, e6) |
 | C4 depth, not data | holds by construction | **fails**: the gap grows with `kappa` as fast as with `L` (e4) | n/a | partially: depth dominates, but `kappa` moves coherence / `ratio_paper` by up to +75 % (e4) | not tested | **partially for `H_o`** (ratios flat in `kappa` at fixed trace, but eigenvectors migrate to `W_1` and absolute input scale collapses coherence to 1); **fails for `H`**, whose top eigenvalue is `lambda_max(Sigma_a)` at every `L` (e4, e7) |
-| C5 ratio constant during GD | **holds** (excursion only for unaligned targets) | n/a | fails (coherence `L -> 1.2`) | fails (coherence falls during training) | fails | **fails** (no `L` to preserve; coherence drifts, e.g. 1.1 -> 1.3 at `L = 2`) |
+| C5 ratio constant during GD | **holds** (4.00 -> 4.05 over 1500 GD steps; excursion only for unaligned targets) | constancy holds (2.95 -> 2.97) but `!= L` | fails (coherence `L -> 1.2`) | fails (coherence falls during training) | fails | **fails**: ratio drifts 30-35 %, balancedness not conserved, coherence stays `~L/2` (e6) |
+| real data (digits, `C = 10`): outlier count | n/a | no cluster (rank 160, smooth decay) | n/a | no cluster | n/a | **exactly `C = d_out = 10` outliers along the readout feature mean** (MSE), none under CE; no `r^2 = 100` cluster in any kind (e5) |
 | P1 coherence `< L` for nonlinear nets | `= L` | `< L` | `< L` after training | `< L` (0.3-0.5 L) | `< L` | **holds**: `0.4-0.5 L` |
 | P2 `d_out` feature-mean outliers from the readout | absent (centred features) | absent | not tested | **holds**: 6 -> 2 outliers when features are centred (`L = 2`) | **holds**: 6 -> 2, readout `lambda_max` 1.87 -> 0.41 | **holds** for `L <= 3`, diluted by dead units for `L >= 4` |
 | block-triangular `dg/dtheta` | symmetric | symmetric | symmetric | symmetric (lower blocks 2-50) | symmetric (lower blocks 1-7) | **exactly block upper-triangular** (e7) |
