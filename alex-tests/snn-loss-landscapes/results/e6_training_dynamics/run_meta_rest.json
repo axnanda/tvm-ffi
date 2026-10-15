@@ -1,0 +1,33 @@
+{
+ "exp": "e6_training_dynamics",
+ "group": "rest",
+ "steps": 1500,
+ "ho_every": 25,
+ "full_every": 125,
+ "seeds": [
+  0,
+  1
+ ],
+ "runs": [
+  {
+   "name": "linear_bal_s0",
+   "wall_min": 0.6411235650380452,
+   "lr": 0.06650407365269728,
+   "loss_final": 5.896951184247639e-31
+  },
+  {
+   "name": "linear_gauss_s0",
+   "wall_min": 0.566884207725525,
+   "lr": 0.013431241776353749,
+   "loss_final": 0.00021519995722939586
+  },
+  {
+   "name": "relu_s0",
+   "wall_min": 0.6249644954999288,
+   "lr": 0.010465951664592793,
+   "loss_final": 0.18847373952589846
+  }
+ ],
+ "skipped_budget": [],
+ "skipped_existing": []
+}
