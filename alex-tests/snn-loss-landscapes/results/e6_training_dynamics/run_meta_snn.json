@@ -1,0 +1,21 @@
+{
+ "exp": "e6_training_dynamics",
+ "group": "snn",
+ "steps": 1500,
+ "ho_every": 25,
+ "full_every": 125,
+ "seeds": [
+  0,
+  1
+ ],
+ "runs": [
+  {
+   "name": "snn_s0",
+   "wall_min": 4.9406764308611555,
+   "lr": 0.4003545964689837,
+   "loss_final": 0.016992687140056643
+  }
+ ],
+ "skipped_budget": [],
+ "skipped_existing": []
+}
