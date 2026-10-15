@@ -20,8 +20,21 @@
    "wall_min": 4.896568524837494,
    "lr": 0.005,
    "loss_final": 0.008926864157372098
+  },
+  {
+   "name": "snn_s1",
+   "wall_min": 4.929855334758758,
+   "lr": 0.26479939715455336,
+   "loss_final": 0.01753074446367081
+  },
+  {
+   "name": "snn_adam_s1",
+   "wall_min": 4.358579389254252,
+   "lr": 0.005,
+   "loss_final": 0.00939355539195873
   }
  ],
  "skipped_budget": [],
- "skipped_existing": []
+ "skipped_existing": [],
+ "total_wall_min": 19.128516495227814
 }

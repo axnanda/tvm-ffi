@@ -82,12 +82,24 @@
   0,
   1
  ],
- "n_runs_done": 50,
+ "n_runs_done": 52,
  "n_runs_planned": 62,
- "reductions": [],
- "cpu_min_total": 50.63844564575317,
- "wall_min_total": 54.12382357120514,
- "elapsed_min": 54.12382358312607,
+ "reductions": [
+  "SKIPPED beta0_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED beta0.5_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED beta0.99_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED detachTrue_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.0 min > budget 60.0 min",
+  "SKIPPED resethard_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.2 min > budget 60.0 min",
+  "SKIPPED suratan_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED readmembrane_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.2 min > budget 60.0 min",
+  "SKIPPED gain0.5_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED gain2_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min",
+  "SKIPPED centerTrue_L4_seed1 (phase p4_seed1_rest): cpu used 60.5 min + est 1.1 min > budget 60.0 min"
+ ],
+ "cpu_min_total": 60.9143116330365,
+ "wall_min_total": 63.22768157720566,
+ "elapsed_min": 63.22768158912659,
  "budget_min": 60.0,
- "budget_basis": "process CPU time (time.process_time), 1 torch thread"
+ "budget_basis": "process CPU time (time.process_time), 1 torch thread",
+ "wall_minutes_total": 63.618512562910716
 }

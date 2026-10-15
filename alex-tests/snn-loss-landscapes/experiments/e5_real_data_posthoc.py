@@ -65,3 +65,74 @@ for loss in ("mse", "ce"):
             v = np.mean(vals, 0)
             print(f"| {loss} | {kind} | {L} | " + " | ".join(f"{x:.2f}" for x in v) + " |")
 json.dump(out, open(os.path.join(RES, "posthoc.json"), "w"), indent=1)
+
+
+# --------------------------------------------------------------------------- #
+# Part 2 (recomputed H_o from the saved parameter vectors, ~0.5 s each):
+#  (a) decomposition of the readout-block part of the top-10 eigenvectors of H_o into the feature-mean direction mu,
+#      the remaining class-mean subspace (span{mu_c} minus mu, 9 dims) and the rest  -> feature-mean (P2) vs
+#      class-mean (Papyan) mechanism, which the count alone cannot separate because d_out = C = 10 here;
+#  (b) e7 structural floor for the SNN: at zero residual H = readout diagonal block + upper cross blocks of H_o, so
+#      ||H_f||/||H_o|| >= ||hidden diagonal blocks + lower cross blocks of H_o|| / ||H_o||.
+# --------------------------------------------------------------------------- #
+import torch
+from e5_real_data import make_spec, load_data, N_HESS, D_OUT
+
+D = load_data()
+Xs, Ys, ys = D["X_sub"], D["Y_sub"], D["y_sub"]
+part2 = []
+print("\n### top-10 eigenvectors of H_o: energy fractions (readout block part) along mu / class-mean-minus-mu (9d) / rest; E_readout = energy in W_L;"
+      " SNN: e7 structural floor of |H_f|/|H_o| vs measured")
+print("| run | step | E_readout(top10) | along mu | class-means minus mu | rest | lam1(Ho)/||mu||^2 | Hf/Ho measured | e7 floor (snn) |")
+print("|" + "---|" * 9)
+for r in rows:
+    spec = make_spec(r["kind"], r["L"])
+    rw = np.load(os.path.join(RES, "raw", f"{r['name']}.npz"))
+    for step, pkey in ((0, "params_init"), (end_step, "params_final")):
+        params = spec.vec_to_params(torch.as_tensor(rw[pkey]))
+        H_o = sl.gauss_newton(spec, params, Xs, Ys, r["loss"])
+        eigs, evecs = sl.eigh(sl.symmetrize(H_o))
+        with torch.no_grad():
+            a = spec.hidden_features(params, Xs)
+        mu = a.mean(0)
+        mu_hat = mu / mu.norm()
+        mu_c = torch.stack([a[ys == c].mean(0) for c in range(D_OUT)])  # (10, h)
+        # orthonormal basis of span{mu_c} minus mu
+        Q, _ = torch.linalg.qr(torch.cat([mu_hat[:, None], mu_c.T], 1))
+        Qc = Q[:, 1:D_OUT]  # 9 directions of the class-mean subspace orthogonal to mu
+        sl_L = spec.layer_slices[-1]
+        V = evecs[:, :10]
+        VL = V[sl_L].reshape(D_OUT, -1, 10)  # (d_out, h, 10): W_L part of each eigenvector
+        e_read = float((V[sl_L] ** 2).sum() / 10)
+        e_mu = float(((VL * mu_hat[None, :, None]).sum(1) ** 2).sum() / 10)
+        e_cls = float((torch.einsum("ohk,hj->ojk", VL, Qc) ** 2).sum() / 10)
+        e_rest = e_read - e_mu - e_cls
+        c = [c_ for c_ in r["checkpoints"] if c_["step"] == step][0]
+        rec = {"name": r["name"], "step": step, "E_readout_top10": e_read, "E_mu_top10": e_mu, "E_classmean_minus_mu_top10": e_cls,
+               "E_rest_top10": e_rest, "lam1_over_mu_sq": float(eigs[0] / (mu @ mu)), "Hf_over_Ho": c.get("Hf_over_Ho")}
+        floor = None
+        if r["kind"] == "snn":
+            Hs = H_o.clone()
+            sls = spec.layer_slices
+            keep = torch.zeros_like(Hs)
+            for i, si in enumerate(sls):
+                for j, sj in enumerate(sls):
+                    if (i == j == len(sls) - 1) or (j > i):  # readout diagonal block and upper cross blocks survive at zero residual
+                        keep[si, sj] = Hs[si, sj]
+            floor = float(torch.linalg.norm(Hs - keep) / torch.linalg.norm(Hs))
+            rec["e7_Hf_floor"] = floor
+        part2.append(rec)
+        print(f"| {r['name']} | {step} | {e_read:.2f} | {e_mu:.2f} | {e_cls:.2f} | {e_rest:.2f} | {rec['lam1_over_mu_sq']:.2f} | "
+              f"{rec['Hf_over_Ho'] if rec['Hf_over_Ho'] is None else round(rec['Hf_over_Ho'], 3)} | {'-' if floor is None else round(floor, 3)} |")
+json.dump({"part1": out, "part2": part2}, open(os.path.join(RES, "posthoc.json"), "w"), indent=1)
+print("\n### mean over seeds, end of training")
+print("| loss | kind | L | E_readout | along mu | class-means minus mu | rest | Hf/Ho | e7 floor |")
+print("|" + "---|" * 9)
+for loss in ("mse", "ce"):
+    for kind in ("relu", "linear", "snn"):
+        for L in (2, 3, 4, 6):
+            g = [p for p in part2 if p["step"] == end_step and p["name"].startswith(f"{kind}_{loss}_L{L}_")]
+            if not g:
+                continue
+            m = lambda k: np.mean([p[k] for p in g if p.get(k) is not None]) if any(p.get(k) is not None for p in g) else float("nan")
+            print(f"| {loss} | {kind} | {L} | {m('E_readout_top10'):.2f} | {m('E_mu_top10'):.2f} | {m('E_classmean_minus_mu_top10'):.2f} | {m('E_rest_top10'):.2f} | {m('Hf_over_Ho'):.3f} | {m('e7_Hf_floor'):.3f} |")

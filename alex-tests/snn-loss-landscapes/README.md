@@ -203,7 +203,40 @@ Same protocol as e2a (`L = 2..8`, settings A and B, 2 seeds, Adam 800 steps; lin
 Summarised in section 2; `figures/e7_update_field_structure.png`, `figures/e7_scalars_vs_L.png`,
 `results/e7_update_field_structure/summary.json` (64 rows).
 
-### 4.6 e3 (SNN hyper-parameters), e4 (data imbalance), e5 (real data), e6 (training dynamics)
+### 4.6 e4: "depth, not data" under controlled covariance imbalance
+
+Kinds SNN / ReLU / Gaussian-init linear, setting B, `L in {2, 4, 8}`, 2 seeds, 400 Adam steps (GD for
+linear); input covariance with geometric spectrum of condition number `kappa in {1, 10, 100, 1000}` at
+fixed trace, imbalanced target singular values `[1, 0.1]`, and an un-normalised condition (25 % of the
+input coordinates scaled by 10, `kappa = 100`, trace 412). 108 runs; `results/e4_data_imbalance/tables.md`,
+`figures/e4_data_imbalance_*.png`. Slopes of the `H_o` statistics after training:
+
+| kind | metric | depth slope (per unit `L`, `kappa = 1`) | data slope (per decade of `kappa`, pooled) |
+|---|---|---|---|
+| SNN | `ratio_paper` / coherence / `ratio_split` | 0.89 / 0.37 / 0.24 | +0.16 / +0.07 / -0.22 |
+| ReLU | `ratio_paper` / coherence / `ratio_split` | 0.21 / 0.12 / -0.19 | +0.52 / +0.14 / -0.01 |
+| linear (Gaussian init) | `ratio_paper` / coherence / `ratio_split` | 0.42 / 0.38 / 1.26 | **+1.17 / +0.16 / +3.32** |
+
+* For the SNN's surrogate Gauss-Newton matrix the *direction* of C4 holds: at fixed trace the gap
+  statistics are flat in `kappa` (log-log exponents `<= 0.03`) and grow with depth (coherence
+  1.25 -> 1.79 -> 3.44 for `L = 2, 4, 8`), and target imbalance changes nothing. The *mechanism* is not the
+  paper's: there is no `r^2` cluster (data-driven dominant count 1.5-4), coherence is `~0.45 L`, both the
+  top eigenvalue and the bulk edge scale like `kappa^0.1`, and the top eigenvectors migrate into the first
+  layer as `kappa` grows (energy in `W_1` at `L = 2`: 0.09 -> 0.86), i.e. the dominant directions become
+  input-covariance directions. The un-normalised condition collapses coherence to 1.0 with 96-100 % of
+  the top-eigenvector energy in `W_1`: absolute input scale overrides depth entirely.
+* For the SNN's actual update-field Jacobian `H`, C4 is moot: the largest eigenvalue equals
+  `lambda_max(Sigma_a)` of the readout rates exactly at every `L` and `kappa` (`d_out = 6` copies), with no
+  depth dependence; `||H_f||/||H_o||` stays 0.63-0.99.
+* ReLU: depth is the more consistent driver, but `kappa` moves coherence at `L = 2` (1.13 -> 1.66) and
+  `ratio_paper` at `L = 8` (5.6 -> 9.8) by comparable amounts.
+* Gaussian-init linear nets *fail* C4: the gap grows with `kappa` as much as with depth
+  (`ratio_split` +3.3 per decade vs +1.3 per layer), because without the balanced construction the first
+  layer block of `H_o` is `(A^T A) (x) Sigma_x` and the input covariance enters the top of the spectrum
+  directly. "Depth, not data" is a property of the balanced-init construction, not of deep linear nets
+  in general.
+
+### 4.7 e3 (SNN hyper-parameters), e5 (real data), e6 (training dynamics)
 
 _Pending; see section 9._
 
@@ -214,7 +247,7 @@ _Pending; see section 9._
 | C1 `r^2` dominant + equal bulk + zeros | **holds** exactly (e1, e8) | partially: a 1-2 eigenvalue spike with a large gap, no `r^2` cluster, no equal bulk (e1, e2b) | holds at init, lost after training (e8) | fails: no gap at `r^2`; `d_out` cluster at `L <= 3` only (e2b, e8) | fails: same as ReLU (e2b) | **fails**: no gap at `r^2` (1.00-1.05); the only cluster has `d_out` members and lives in the readout (e2a, e8) |
 | C2 ratio `= L` / `Theta(L)` | **holds** exactly | gap grows (`ratio_split ~ 1.8 L`) but coherence `~0.4-0.5 L` | slope 0.99 at init, ~0 after training | coherence slope 0.43-0.48 at init, 0.15-0.24 after training; `ratio_split` flat | coherence slope 0.37-0.45 / 0.25; `ratio_split` flat | **fails**: coherence `~0.4-0.5 L`, gap slope ~0; only the gapless fixed-index ratio grows |
 | C3 `H_f -> 0` exponentially, `H -> H_o` | **holds** (rate matches theory) | holds | holds (`||H_f||/||H_o||` 0.01 after training) | holds (<= 0.008 after training) | holds (<= 0.025) | **fails**: 0.7-1.0 after training; `H` is not even symmetric |
-| C4 depth, not data | holds by construction | holds | n/a | pending (e4) | pending (e4) | **inverted**: the SNN's outliers come from an internal feature-covariance imbalance (P2); e4 pending |
+| C4 depth, not data | holds by construction | **fails**: the gap grows with `kappa` as fast as with `L` (e4) | n/a | partially: depth dominates, but `kappa` moves coherence / `ratio_paper` by up to +75 % (e4) | not tested | **partially for `H_o`** (ratios flat in `kappa` at fixed trace, but eigenvectors migrate to `W_1` and absolute input scale collapses coherence to 1); **fails for `H`**, whose top eigenvalue is `lambda_max(Sigma_a)` at every `L` (e4, e7) |
 | C5 ratio constant during GD | **holds** (excursion only for unaligned targets) | n/a | fails (coherence `L -> 1.2`) | fails (coherence falls during training) | fails | **fails** (no `L` to preserve; coherence drifts, e.g. 1.1 -> 1.3 at `L = 2`) |
 | P1 coherence `< L` for nonlinear nets | `= L` | `< L` | `< L` after training | `< L` (0.3-0.5 L) | `< L` | **holds**: `0.4-0.5 L` |
 | P2 `d_out` feature-mean outliers from the readout | absent (centred features) | absent | not tested | **holds**: 6 -> 2 outliers when features are centred (`L = 2`) | **holds**: 6 -> 2, readout `lambda_max` 1.87 -> 0.41 | **holds** for `L <= 3`, diluted by dead units for `L >= 4` |

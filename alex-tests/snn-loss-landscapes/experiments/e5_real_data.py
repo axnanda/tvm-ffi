@@ -614,6 +614,8 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                     for x_, c_ in [(10, "k"), (100, "b"), (160, "c")]:
                         ax.axvline(x_, color=c_, lw=0.7, ls=":")
                     ax.set_xscale("log"); ax.set_yscale("log")
+                    ymax = max([float(np.asarray(ln.get_ydata()).max()) for ln in ax.get_lines() if len(ln.get_ydata()) > 2] + [1e-300])
+                    ax.set_ylim(1e-9 * ymax, 2 * ymax)  # hide the numerically-zero tail (1e-100) so the top structure is visible
                     c0 = [_ck(r_, end_step) for r_ in sel(kind, L, loss)]
                     nd = [c[f"dominant_count_{mat}"] for c in c0 if c and c.get(f"dominant_count_{mat}") is not None]
                     ax.set_title(f"{kind} L={L} ({loss}) ndom_end={nd}", fontsize=9)
@@ -793,7 +795,8 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                                     label=f"{loss} {'init' if step == 0 else 'end'}")
                 for x_ in (10, 100):
                     ax.axvline(x_, color="k", ls=":", lw=0.7)
-                ax.set_xscale("log"); ax.set_yscale("log"); ax.set_title(f"{kind} L=4, {'H_o' if mat == 'Ho' else 'sym(H)'} / lam_max", fontsize=9)
+                ax.set_xscale("log"); ax.set_yscale("log"); ax.set_ylim(1e-9, 2.0)
+                ax.set_title(f"{kind} L=4, {'H_o' if mat == 'Ho' else 'sym(H)'} / lam_max", fontsize=9)
                 _legend(ax, fontsize=7); ax.set_xlabel("index")
         fig.suptitle(f"{exp}: CE vs MSE spectra at L=4 (seed 0, normalised by lambda_max)", fontsize=10)
         fig.tight_layout()

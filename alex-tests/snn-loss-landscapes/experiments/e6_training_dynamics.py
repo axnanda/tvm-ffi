@@ -386,7 +386,7 @@ def _bal_mean(v):
 
 QUANTITIES = [
     ("loss", "loss (every step)", lambda r_: (np.arange(len(r_["loss_curve"])), np.asarray([np.nan if v is None else v for v in r_["loss_curve"]], float)), True),
-    ("lam_max_symH", "lambda_max(sym H)  [dashed: 2/lr edge of stability, GD runs]", lambda r_: series(r_, ("coh_H", "lambda_max"), full_only=True), True),
+    ("lam_max_symH", "lambda_max(sym H)  [dotted: 2/lr edge of stability, GD runs]", lambda r_: series(r_, ("coh_H", "lambda_max"), full_only=True), True),
     ("lr_x_lam_max_symH", "lr * lambda_max(sym H)  (GD runs; grey: 2 = edge of stability)", lambda r_: (lambda xy: (xy[0], r_["lr"] * xy[1]))(series(r_, ("coh_H", "lambda_max"), full_only=True)) if r_["optimizer"] == "gd" else (np.array([]), np.array([])), False),
     ("lam_max_Ho", "lambda_max(H_o)", lambda r_: series(r_, ("coh_Ho", "lambda_max")), True),
     ("Hf_over_Ho", "||H_f||_F / ||H_o||_F  (C3; dotted: exp. fit, seed 0)", lambda r_: series(r_, ("Hf_over_Ho",), full_only=True), True),
@@ -402,12 +402,12 @@ QUANTITIES = [
     ("neg_frac_H", "negative eigenvalue fraction of sym H", lambda r_: series(r_, ("neg_frac_H",), full_only=True), False),
     ("balancedness", "mean_l ||W_{l+1}^T W_{l+1} - W_l W_l^T||_F", lambda r_: series(r_, ("balancedness",), reducer=_bal_mean), True),
     ("spike_rate", "mean spike rate (spiking kinds)", lambda r_: series(r_, ("spikes", "mean_rate")), False),
-    ("spectral_radius_H", "max |eig(H)| of the NON-symmetrised H  (dashed: 2/lr)", lambda r_: series(r_, ("eigH_nonsym_top5_abs", 0), full_only=True), True),
+    ("spectral_radius_H", "max |eig(H)| of the NON-symmetrised H  (dotted: 2/lr, GD runs)", lambda r_: series(r_, ("eigH_nonsym_top5_abs", 0), full_only=True), True),
     ("grad_norm", "||g|| (every step)", lambda r_: (np.arange(len(r_["grad_norm_curve"])), np.asarray([np.nan if v is None else v for v in r_["grad_norm_curve"]], float)), True),
 ]
 
 
-def plot_quantity(ax, key, title, extractor, logy, runs, fits):
+def plot_quantity(ax, key, title, extractor, logy, runs, fits, clip=True):
     labels_done = set()
     for run in runs:
         x, y = extractor(run)
@@ -426,7 +426,7 @@ def plot_quantity(ax, key, title, extractor, logy, runs, fits):
         if key == "Hf_over_Ho" and run["seed"] == 0:
             ft = fits.get(run["name"])
             if ft and ft.get("rate") is not None:
-                xx = np.linspace(ft["x_start"], x.max(), 50)
+                xx = np.linspace(ft["x_start"], ft.get("x_end", x.max()), 50)
                 ax.plot(xx, np.exp(ft["intercept"] - ft["rate"] * xx), color="k", ls=":", lw=0.8, alpha=0.7)
     if key.startswith("ratio") or key.startswith("coherence"):
         ax.axhline(L, color="grey", ls="--", lw=0.8)
@@ -437,6 +437,10 @@ def plot_quantity(ax, key, title, extractor, logy, runs, fits):
         ax.axhline(D_OUT, color="grey", ls=":", lw=0.8)
     if logy:
         ax.set_yscale("log")
+    if clip and key == "loss":
+        ax.set_ylim(bottom=1e-8)
+    if clip and key == "Hf_over_Ho":
+        ax.set_ylim(1e-7, 5)
     ax.set_title(title, fontsize=8)
     ax.set_xlabel("step", fontsize=8)
     ax.tick_params(labelsize=7)
@@ -484,12 +488,19 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
     fig.tight_layout(rect=(0, 0.03, 1, 0.97))
     fig.savefig(os.path.join(fig_dir, f"{exp}_overview.png"), dpi=120)
     plt.close(fig)
-    # --- one figure per quantity
+    # --- one figure per quantity (loss and ||H_f||/||H_o||: full range + readable zoom)
     for key, title, extr, logy in QUANTITIES:
-        fig, ax = plt.subplots(figsize=(7, 4.2))
-        plot_quantity(ax, key, title, extr, logy, runs, fits)
-        ax.legend(fontsize=8)
-        ax.set_title(f"{exp}: {title}", fontsize=9)
+        if key in ("loss", "Hf_over_Ho"):
+            fig, axs = plt.subplots(1, 2, figsize=(13, 4.2))
+            plot_quantity(axs[0], key, title + " [full range]", extr, logy, runs, fits, clip=False)
+            plot_quantity(axs[1], key, title + " [zoom]", extr, logy, runs, fits, clip=True)
+            axs[0].legend(fontsize=8)
+            fig.suptitle(f"{exp}: {title}", fontsize=9)
+        else:
+            fig, ax = plt.subplots(figsize=(7, 4.2))
+            plot_quantity(ax, key, title, extr, logy, runs, fits)
+            ax.legend(fontsize=8)
+            ax.set_title(f"{exp}: {title}", fontsize=9)
         fig.tight_layout()
         fig.savefig(os.path.join(fig_dir, f"{exp}_{key}.png"), dpi=120)
         plt.close(fig)
