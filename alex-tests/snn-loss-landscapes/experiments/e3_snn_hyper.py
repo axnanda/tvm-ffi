@@ -803,6 +803,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--figures", action="store_true")
+    ap.add_argument("--resume", action="store_true", help="keep runs already in summary.json and continue the plan")
     args = ap.parse_args()
     exp = EXP + ("_smoke" if args.smoke else "")
     res_dir = os.path.join(ROOT, "results", exp)
@@ -819,40 +820,79 @@ def main():
     runs: List[Dict[str, object]] = []
     walls: Dict[str, float] = {}
     reductions: List[str] = []
+    done_names = set()
+    cpu_prior, wall_prior = 0.0, 0.0  # CPU / wall minutes consumed by earlier invocations (--resume)
+    summary_path = os.path.join(res_dir, "summary.json")
+    meta_path = os.path.join(res_dir, "run_meta.json")
+
+    def wall_key(hp):
+        return tag_of(hp) + ("" if hp["L"] == 4 else f"_L{hp['L']}")
+
+    if args.resume and os.path.exists(summary_path):
+        with open(summary_path) as f:
+            runs = json.load(f)
+        done_names = {r_["name"] for r_ in runs}
+        for r_ in runs:
+            walls[wall_key(r_["hp"])] = r_.get("cpu_sec", r_["wall_sec"])
+        if os.path.exists(meta_path):
+            with open(meta_path) as f:
+                meta_prev = json.load(f)
+            cpu_prior = float(meta_prev.get("cpu_min_total", meta_prev.get("elapsed_min", 0.0)))
+            wall_prior = float(meta_prev.get("wall_min_total", meta_prev.get("elapsed_min", 0.0)))
+            reductions = [m for m in meta_prev.get("reductions", []) if not m.startswith("SKIPPED")]  # skipped runs are retried
+        print(f"RESUME: {len(runs)} runs already done ({sorted(done_names)}); prior cpu {cpu_prior:.1f} min, wall {wall_prior:.1f} min", flush=True)
     n_total = sum(len(p_[1]) for p_ in phases)
-    print(f"planned runs: {n_total}; phases: {[(p_[0], len(p_[1])) for p_ in phases]}", flush=True)
+    print(f"planned runs: {n_total}; phases: {[(p_[0], len(p_[1])) for p_ in phases]}; budget {BUDGET_MIN} CPU-min (process_time)", flush=True)
+
+    def cpu_used():
+        return cpu_prior + time.process_time() / 60.0
+
+    def wall_used():
+        return wall_prior + (time.time() - T0) / 60.0
+
+    def dump_meta():
+        with open(meta_path, "w") as f:
+            json.dump({"exp": exp, "steps": steps, "lr": LR, "base": BASE, "sweeps": SWEEPS, "depth_grid": {"k": DEPTH_K, "T": DEPTH_T, "L": DEPTH_L},
+                       "seeds": SEEDS, "n_runs_done": len(runs), "n_runs_planned": n_total, "reductions": reductions,
+                       "cpu_min_total": cpu_used(), "wall_min_total": wall_used(), "elapsed_min": wall_used(),
+                       "budget_min": BUDGET_MIN, "budget_basis": "process CPU time (time.process_time), 1 torch thread"}, f, indent=1)
+
     for pname, items, guarded in phases:
         for hp, seed in items:
-            elapsed = (time.time() - T0) / 60.0
+            name = f"{tag_of(hp)}_L{hp['L']}_seed{seed}"
+            if name in done_names:
+                continue
             est = estimate_cost(hp, walls) / 60.0
-            if guarded and elapsed + est > BUDGET_MIN:
-                msg = f"SKIPPED {tag_of(hp)}_L{hp['L']}_seed{seed} (phase {pname}): elapsed {elapsed:.1f} min + est {est:.1f} min > budget {BUDGET_MIN} min"
+            if guarded and cpu_used() + est > BUDGET_MIN:
+                msg = f"SKIPPED {name} (phase {pname}): cpu used {cpu_used():.1f} min + est {est:.1f} min > budget {BUDGET_MIN} min"
                 print(msg, flush=True); reductions.append(msg)
                 continue
+            c0 = time.process_time()
             try:
                 info = run_one(hp, seed, steps, res_dir)
             except Exception as ex:  # keep going; report
-                msg = f"FAILED {tag_of(hp)}_L{hp['L']}_seed{seed}: {type(ex).__name__}: {ex}"
+                msg = f"FAILED {name}: {type(ex).__name__}: {ex}"
                 print(msg, flush=True); reductions.append(msg)
                 continue
             info["phase"] = pname
+            info["cpu_sec"] = time.process_time() - c0
             runs.append(info)
-            walls[tag_of(hp) + ("" if hp["L"] == 4 else f"_L{hp['L']}")] = info["wall_sec"]
-            with open(os.path.join(res_dir, "summary.json"), "w") as f:
+            done_names.add(name)
+            walls[wall_key(hp)] = info["cpu_sec"]
+            with open(summary_path, "w") as f:
                 json.dump(runs, f, indent=1)
-            with open(os.path.join(res_dir, "run_meta.json"), "w") as f:
-                json.dump({"exp": exp, "steps": steps, "lr": LR, "base": BASE, "sweeps": SWEEPS, "depth_grid": {"k": DEPTH_K, "T": DEPTH_T, "L": DEPTH_L},
-                           "seeds": SEEDS, "n_runs_done": len(runs), "n_runs_planned": n_total, "reductions": reductions,
-                           "elapsed_min": (time.time() - T0) / 60.0, "budget_min": BUDGET_MIN}, f, indent=1)
-            print(f"   [{len(runs)}/{n_total}] elapsed {(time.time() - T0) / 60.0:.1f} min", flush=True)
-    print(f"RUNS DONE: {len(runs)}/{n_total}, elapsed {(time.time() - T0) / 60.0:.1f} min; reductions: {reductions}", flush=True)
+            dump_meta()
+            print(f"   [{len(runs)}/{n_total}] cpu {info['cpu_sec']:.0f}s (wall {info['wall_sec']:.0f}s); cpu used {cpu_used():.1f} min, wall {wall_used():.1f} min", flush=True)
+    print(f"RUNS DONE: {len(runs)}/{n_total}, cpu {cpu_used():.1f} min, wall {wall_used():.1f} min; reductions: {reductions}", flush=True)
+    dump_meta()
     make_figures(res_dir, fig_dir, exp)
-    with open(os.path.join(res_dir, "run_meta.json"), "r") as f:
+    with open(meta_path, "r") as f:
         meta = json.load(f)
-    meta["wall_minutes_total"] = (time.time() - T0) / 60.0
-    with open(os.path.join(res_dir, "run_meta.json"), "w") as f:
+    meta["wall_minutes_total"] = wall_used()
+    meta["cpu_min_total"] = cpu_used()
+    with open(meta_path, "w") as f:
         json.dump(meta, f, indent=1)
-    print(f"ALL DONE; total {(time.time() - T0) / 60.0:.1f} min", flush=True)
+    print(f"ALL DONE; cpu {cpu_used():.1f} min, wall {wall_used():.1f} min", flush=True)
 
 
 if __name__ == "__main__":
