@@ -97,7 +97,7 @@
    ]
   }
  ],
- "elapsed_min": 9.60232971906662,
+ "elapsed_min": 14.416281525293986,
  "resumes": [
   {
    "started": "2026-10-15 10:46:51",
@@ -165,9 +165,10 @@
     "smooth_snn_B_L3_seed1",
     "smooth_snn_B_L4_seed1",
     "smooth_snn_B_L5_seed1",
-    "smooth_snn_A_L6_seed1"
+    "smooth_snn_A_L6_seed1",
+    "smooth_snn_A_L8_seed1"
    ],
-   "elapsed_min": 9.60232971906662
+   "elapsed_min": 14.416281525293986
   }
  ]
 }

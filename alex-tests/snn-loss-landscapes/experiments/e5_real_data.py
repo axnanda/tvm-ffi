@@ -127,10 +127,18 @@ def data_sanity(D: Dict[str, torch.Tensor]) -> Dict[str, object]:
     return info
 
 
-def _largest_log_gap_pos(e: np.ndarray, start: int, stop: int) -> Optional[int]:
-    """Same as snnland.analysis._largest_log_gap but on an array that already excludes numerical zeros."""
+FLOOR_REL = 1e-2  # gaps whose lower eigenvalue is < FLOOR_REL * lambda_max are rank/tail boundaries, not outlier structure
+# (the paper's bulk is lambda_max / L >= lambda_max / 6, so any cluster relevant to C1-C5 lies far above 1% of lambda_max;
+#  without the floor the largest log-gap of a smoothly decaying spectrum is always in its tail, e.g. linear L=2: gap 2.2x at index 158)
+
+
+def _largest_log_gap_pos(e: np.ndarray, start: int, stop: int, floor: float = 0.0) -> Optional[int]:
+    """Same as snnland.analysis._largest_log_gap but on an array that already excludes numerical zeros,
+    considering only gaps whose lower eigenvalue e_{i+1} >= floor."""
     best, best_gap = None, -np.inf
     for i in range(start, min(stop, len(e) - 1)):
+        if e[i + 1] < floor:
+            break
         gap = np.log(e[i] / e[i + 1])
         if gap > best_gap:
             best, best_gap = i, gap
@@ -149,17 +157,22 @@ def gap_metrics(e_all: np.ndarray, window: int = 200, tol: float = 1e-8) -> Dict
     n = len(e)
     m = max(min(window, n - 1), 0)
     n_dom, n_bulk = R * R, R * (D_IN + D_OUT - 2 * R)
-    idx = _largest_log_gap_pos(e, 0, min(4 * n_dom, n))
+    floor = FLOOR_REL * float(e[0]) if n else 0.0
+    idx = _largest_log_gap_pos(e, 0, min(4 * n_dom, n), floor)
+    idx_nf = _largest_log_gap_pos(e, 0, min(4 * n_dom, n))
     if idx is None:
-        pos = {"ndom_pos": None, "nbulk_pos": None, "ratio_split_pos": float("nan"), "ndom_pos_gap_ratio": float("nan")}
+        pos = {"ndom_pos": None, "nbulk_pos": None, "ratio_split_pos": float("nan"), "ndom_pos_gap_ratio": float("nan"),
+               "ndom_pos_lam": float("nan")}
     else:
         k1 = idx + 1
-        idx2 = _largest_log_gap_pos(e, k1, min(k1 + 4 * n_bulk, n))
-        k2 = idx2 + 1 if idx2 is not None else n
+        idx2 = _largest_log_gap_pos(e, k1, min(k1 + 4 * n_bulk, n), floor)
+        k2 = idx2 + 1 if idx2 is not None else int((e >= floor).sum())
         bulk = e[k1:k2]
         pos = {"ndom_pos": int(k1), "nbulk_pos": int(k2 - k1),
                "ratio_split_pos": float(e[:k1].mean() / bulk.mean()) if bulk.size else float("nan"),
-               "ndom_pos_gap_ratio": float(e[idx] / e[idx + 1])}
+               "ndom_pos_gap_ratio": float(e[idx] / e[idx + 1]), "ndom_pos_lam": float(e[idx])}
+    pos["ndom_pos_nofloor"] = int(idx_nf + 1) if idx_nf is not None else None
+    pos["n_above_floor"] = int((e >= floor).sum())
     if n < 2:
         return {"n_pos": int(n), **pos, "largest_gap_count_200": None, "largest_gap_ratio_200": None, "top3_gaps_200": [],
                 "n_sep_gap2": 0, "n_sep_gap1p5": 0, "n_sep_gap1p2": 0}
@@ -170,7 +183,7 @@ def gap_metrics(e_all: np.ndarray, window: int = 200, tol: float = 1e-8) -> Dict
     top3 = [(int(i + 1), float(ratios[i])) for i in order if np.isfinite(ratios[i])]
 
     def n_sep(th):
-        idx = np.where(ratios >= th)[0]
+        idx = np.where((ratios >= th) & (e[1:m + 1] >= floor))[0]
         return int(idx.max() + 1) if idx.size else 0
 
     def safe_ratio(i, j):
@@ -539,7 +552,7 @@ def _get(d, *keys):
 def _legend(ax, **kw):
     h, l_ = ax.get_legend_handles_labels()
     if h:
-        _legend(ax, **kw)
+        ax.legend(**kw)
 
 
 def _mean_std(vals):
@@ -607,7 +620,8 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
     count_keys = [("dominant_count_Ho", "data-driven dominant (largest log-gap)"),
                   ("gaps_Ho.n_sep_gap2", "# separated by a gap >= 2x"),
                   ("gaps_Ho.n_sep_gap1p5", "# separated by a gap >= 1.5x"),
-                  ("gaps_Ho.largest_gap_count_200", "largest gap in top-200 (count)")]
+                  ("gaps_Ho.largest_gap_count_200", "largest gap in top-200 (count)"),
+                  ("gaps_Ho.ndom_pos_gap_ratio", "gap ratio e_k/e_k+1 at the data-driven split")]
 
     def getk(c, key):
         return _get(c, *key.split("."))
@@ -625,9 +639,12 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                         v = getk(_ck(r_, step), key)
                         if v is not None:
                             ax.plot([r_["L"]], [v], ".", color=KIND_COL[kind], alpha=0.5, ms=4)
-                ax.axhline(10, color="k", ls=":", lw=0.8, label="C=10")
-                ax.axhline(100, color="b", ls=":", lw=0.8, label="r^2=100")
-                ax.set_yscale("symlog", linthresh=10)
+                if "ratio" in key:
+                    ax.set_yscale("log"); ax.axhline(2, color="gray", ls=":", lw=0.8, label="2x")
+                else:
+                    ax.axhline(10, color="k", ls=":", lw=0.8, label="C=10")
+                    ax.axhline(100, color="b", ls=":", lw=0.8, label="r^2=100")
+                    ax.set_yscale("symlog", linthresh=10)
                 ax.set_xlabel("L"); ax.set_title(f"{title}\n{lab}, H_o, {loss}", fontsize=9)
                 _legend(ax, fontsize=7)
         fig.tight_layout()
