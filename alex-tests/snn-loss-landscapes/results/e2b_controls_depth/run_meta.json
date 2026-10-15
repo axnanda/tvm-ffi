@@ -97,7 +97,7 @@
    ]
   }
  ],
- "elapsed_min": 0.7408996065457661,
+ "elapsed_min": 1.1993957161903381,
  "resumes": [
   {
    "started": "2026-10-15 10:46:51",
@@ -157,9 +157,10 @@
    "redo_missing_raw": [],
    "done_this_session": [
     "linear_B_L8_seed1",
-    "smooth_snn_A_L2_seed1"
+    "smooth_snn_A_L2_seed1",
+    "smooth_snn_A_L3_seed1"
    ],
-   "elapsed_min": 0.7408996065457661
+   "elapsed_min": 1.1993957161903381
   }
  ]
 }
