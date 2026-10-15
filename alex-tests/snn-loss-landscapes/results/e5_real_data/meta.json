@@ -60,5 +60,6 @@
  "n_hess": 256,
  "train_on": "full training split (1437)",
  "skipped": [],
- "budget_min": 62.0
+ "budget_min": 62.0,
+ "total_wall_min": 32.58157970905304
 }

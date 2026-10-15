@@ -350,10 +350,15 @@ def series(run, path, full_only=False, reducer=None):
     return np.asarray(xs, dtype=float), np.asarray(ys, dtype=float)
 
 
-def exp_fit(x, y, floor=1e-13):
-    """Fit log y = a - rate x over the decaying portion (from the argmax of y to the end, y > floor)."""
+def exp_fit(x, y, floor=1e-12, x_min=None):
+    """Fit log y = a - rate x over the decaying portion: from the argmax of y to the end, keeping only
+    y > floor (numerical floor, e.g. the 1e-31 loss plateau of an interpolating linear net) and, with
+    x_min, only x >= x_min (a 'late' fit that ignores the initial transient).  Also returns the plateau
+    value (mean of the last 4 kept points) so a non-decaying ratio is quantified."""
     x, y = np.asarray(x, float), np.asarray(y, float)
     ok = np.isfinite(y) & (y > floor)
+    if x_min is not None:
+        ok &= x >= x_min
     x, y = x[ok], y[ok]
     if len(y) < 4:
         return {"rate": None, "R2": None, "n_points": int(len(y)), "x_start": None, "halving_steps": None}
@@ -369,8 +374,9 @@ def exp_fit(x, y, floor=1e-13):
     ss_tot = float(((ly - ly.mean()) ** 2).sum())
     r2 = 1 - ss_res / ss_tot if ss_tot > 0 else float("nan")
     rate = -float(coef[1])
-    return {"rate": rate, "R2": r2, "n_points": int(len(y)), "x_start": float(x[0]), "intercept": float(coef[0]),
-            "halving_steps": math.log(2) / rate if rate > 0 else None}
+    return {"rate": rate, "R2": r2, "n_points": int(len(y)), "x_start": float(x[0]), "x_end": float(x[-1]), "intercept": float(coef[0]),
+            "halving_steps": math.log(2) / rate if rate > 0 else None, "plateau_last4": float(np.mean(y[-4:])),
+            "y_start": float(y[0]), "y_end": float(y[-1])}
 
 
 # (key, title, extractor(run) -> (x, y), log_y)
@@ -381,6 +387,7 @@ def _bal_mean(v):
 QUANTITIES = [
     ("loss", "loss (every step)", lambda r_: (np.arange(len(r_["loss_curve"])), np.asarray([np.nan if v is None else v for v in r_["loss_curve"]], float)), True),
     ("lam_max_symH", "lambda_max(sym H)  [dashed: 2/lr edge of stability, GD runs]", lambda r_: series(r_, ("coh_H", "lambda_max"), full_only=True), True),
+    ("lr_x_lam_max_symH", "lr * lambda_max(sym H)  (GD runs; grey: 2 = edge of stability)", lambda r_: (lambda xy: (xy[0], r_["lr"] * xy[1]))(series(r_, ("coh_H", "lambda_max"), full_only=True)) if r_["optimizer"] == "gd" else (np.array([]), np.array([])), False),
     ("lam_max_Ho", "lambda_max(H_o)", lambda r_: series(r_, ("coh_Ho", "lambda_max")), True),
     ("Hf_over_Ho", "||H_f||_F / ||H_o||_F  (C3; dotted: exp. fit, seed 0)", lambda r_: series(r_, ("Hf_over_Ho",), full_only=True), True),
     ("ratio_paper_Ho", "ratio_paper(H_o) = mean top r^2 / mean next r(d_in+d_out-2r)  (C5; grey: L)", lambda r_: series(r_, ("cluster_Ho", "ratio_paper")), True),
@@ -423,6 +430,8 @@ def plot_quantity(ax, key, title, extractor, logy, runs, fits):
                 ax.plot(xx, np.exp(ft["intercept"] - ft["rate"] * xx), color="k", ls=":", lw=0.8, alpha=0.7)
     if key.startswith("ratio") or key.startswith("coherence"):
         ax.axhline(L, color="grey", ls="--", lw=0.8)
+    if key == "lr_x_lam_max_symH":
+        ax.axhline(2.0, color="grey", ls="--", lw=0.8)
     if key.startswith("split_n_dominant"):
         ax.axhline(R * R, color="grey", ls="--", lw=0.8)
         ax.axhline(D_OUT, color="grey", ls=":", lw=0.8)
@@ -445,12 +454,14 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
         return
     os.makedirs(fig_dir, exist_ok=True)
     # --- exponential fits of ||H_f||/||H_o|| and of the loss over the decaying portion
-    fits, loss_fits = {}, {}
+    fits, loss_fits, late_fits, late_loss_fits = {}, {}, {}, {}
     for run in runs:
         x, y = series(run, ("Hf_over_Ho",), full_only=True)
-        fits[run["name"]] = exp_fit(x, y)
+        fits[run["name"]] = exp_fit(x, y, floor=1e-12)
+        late_fits[run["name"]] = exp_fit(x, y, floor=1e-12, x_min=250)
         lc = np.asarray([np.nan if v is None else v for v in run["loss_curve"]], float)
-        loss_fits[run["name"]] = exp_fit(np.arange(len(lc)), lc)
+        loss_fits[run["name"]] = exp_fit(np.arange(len(lc)), lc, floor=1e-26)
+        late_loss_fits[run["name"]] = exp_fit(np.arange(len(lc)), lc, floor=1e-26, x_min=250)
     # --- overview grid
     nq = len(QUANTITIES)
     ncol = 4
@@ -545,6 +556,8 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
             "Hf_over_Ho_init": at(run, ("Hf_over_Ho",), "init", True), "Hf_over_Ho_mid": at(run, ("Hf_over_Ho",), "mid", True),
             "Hf_over_Ho_end": at(run, ("Hf_over_Ho",), "end", True),
             "Hf_fit": fits[run["name"]], "loss_fit": loss_fits[run["name"]],
+            "Hf_late_fit": late_fits[run["name"]], "loss_late_fit": late_loss_fits[run["name"]],
+            "Hf_over_Ho_plateau_last4": fits[run["name"]].get("plateau_last4"),
             "ratio_paper_Ho_init": at(run, ("cluster_Ho", "ratio_paper"), "init"), "ratio_paper_Ho_end": at(run, ("cluster_Ho", "ratio_paper"), "end"),
             "ratio_split_Ho_init": at(run, ("cluster_Ho", "ratio_split"), "init"), "ratio_split_Ho_end": at(run, ("cluster_Ho", "ratio_split"), "end"),
             "ratio_paper_H_init": at(run, ("cluster_H", "ratio_paper"), "init", True), "ratio_paper_H_end": at(run, ("cluster_H", "ratio_paper"), "end", True),
@@ -580,7 +593,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
             vals = np.asarray([r_[k] for r_ in rows], float)
             vals = vals[np.isfinite(vals)]
             agg[k] = {"mean": float(vals.mean()), "std": float(vals.std()) if len(vals) > 1 else 0.0, "n": int(len(vals))} if len(vals) else None
-        for fk in ("Hf_fit", "loss_fit"):
+        for fk in ("Hf_fit", "loss_fit", "Hf_late_fit", "loss_late_fit"):
             rates = np.asarray([r_[fk]["rate"] for r_ in rows if r_[fk]["rate"] is not None], float)
             r2s = np.asarray([r_[fk]["R2"] for r_ in rows if r_[fk]["R2"] is not None], float)
             agg[fk] = {"rate_mean": float(rates.mean()) if len(rates) else None, "rate_std": float(rates.std()) if len(rates) > 1 else 0.0,
@@ -602,14 +615,16 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
             return "-"
         return (f.format(v["mean"]) + (f" ± {f.format(v['std'])}" if v["n"] > 1 else ""))
 
-    lines.append("| cond | lr | lr·λmax(symH) max | loss 0 → end | #loss↑ | ‖Hf‖/‖Ho‖ 0 → mid → end | Hf exp rate (×1e-3/step), R² | loss exp rate (×1e-3) |")
+    lines.append("| cond | lr | lr·λmax(symH) max | loss 0 → end | #loss↑ | ‖Hf‖/‖Ho‖ 0 → mid → end | Hf exp rate ×1e-3/step (R²) [all / step≥250] | loss exp rate ×1e-3 (R²) [all / step≥250] |")
     lines.append("|---|---|---|---|---|---|---|---|")
+
+    def fit_s(ff):
+        return f"{1e3 * ff['rate_mean']:.2f}±{1e3 * ff['rate_std']:.2f} ({ff['R2_mean']:.2f})" if ff["rate_mean"] is not None else "-"
+
     for label, a in per_label.items():
-        hf = a["Hf_fit"]; lf = a["loss_fit"]
-        hf_s = f"{1e3 * hf['rate_mean']:.2f} ± {1e3 * hf['rate_std']:.2f}, R²={hf['R2_mean']:.2f}" if hf["rate_mean"] is not None else "-"
-        lf_s = f"{1e3 * lf['rate_mean']:.2f} ± {1e3 * lf['rate_std']:.2f}, R²={lf['R2_mean']:.2f}" if lf["rate_mean"] is not None else "-"
         lines.append(f"| {label} | {fmt(a, 'lr', '{:.4f}')} | {fmt(a, 'lr_x_lam_max_symH_max', '{:.2f}')} | {fmt(a, 'loss_init', '{:.2e}')} → {fmt(a, 'loss_final', '{:.2e}')} | "
-                     f"{fmt(a, 'n_loss_increases', '{:.0f}')} | {fmt(a, 'Hf_over_Ho_init', '{:.2e}')} → {fmt(a, 'Hf_over_Ho_mid', '{:.2e}')} → {fmt(a, 'Hf_over_Ho_end', '{:.2e}')} | {hf_s} | {lf_s} |")
+                     f"{fmt(a, 'n_loss_increases', '{:.0f}')} | {fmt(a, 'Hf_over_Ho_init', '{:.2e}')} → {fmt(a, 'Hf_over_Ho_mid', '{:.2e}')} → {fmt(a, 'Hf_over_Ho_end', '{:.2e}')} | "
+                     f"{fit_s(a['Hf_fit'])} / {fit_s(a['Hf_late_fit'])} | {fit_s(a['loss_fit'])} / {fit_s(a['loss_late_fit'])} |")
     lines.append("")
     lines.append("| cond | ratio_paper(Ho) 0 → end | ratio_split(Ho) 0 → end | ratio_paper(symH) 0 → end | n_dom(Ho) 0 → end | coherence(Ho) 0 → end (max) | asym(H) 0 → end | neg frac(symH) 0 → end | balancedness 0 → end | rate 0 → end |")
     lines.append("|---|---|---|---|---|---|---|---|---|---|")
