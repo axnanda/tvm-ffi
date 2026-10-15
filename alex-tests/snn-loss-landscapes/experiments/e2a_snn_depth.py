@@ -287,7 +287,15 @@ def get(c, path):
     for p_ in path.split("."):
         if c is None:
             return np.nan
-        c = c.get(p_) if isinstance(c, dict) else None
+        if isinstance(c, dict):
+            c = c.get(p_)
+        elif isinstance(c, (list, tuple)):
+            try:
+                c = c[int(p_)]
+            except (ValueError, IndexError):
+                c = None
+        else:
+            c = None
     return np.nan if c is None else c
 
 
@@ -340,6 +348,7 @@ def make_figures(res_dir, fig_dir, exp):
         for j, L in enumerate(Ls_present):
             for i, tag in enumerate(["Ho", "H"]):
                 ax = axes[i, j]
+                emax = 0.0
                 for r_ in kai:
                     if r_["setting"] != setting or r_["L"] != L:
                         continue
@@ -349,6 +358,7 @@ def make_figures(res_dir, fig_dir, exp):
                         if key not in z:
                             continue
                         e = z[key]
+                        emax = max(emax, float(np.abs(e).max()))
                         idx = np.arange(1, len(e) + 1)
                         pos = e > 0
                         ax.plot(idx[pos], e[pos], color=ckcol[st], lw=0.7, alpha=0.7,
@@ -359,6 +369,8 @@ def make_figures(res_dir, fig_dir, exp):
                 ax.axvline(r * r, color="k", ls="--", lw=0.8, label=f"r^2={r*r}")
                 ax.axvline(d_out, color="gray", ls="-.", lw=0.8, label=f"d_out={d_out}")
                 ax.set_xscale("log"); ax.set_yscale("log")
+                if emax > 0:  # the null space of H_o is numerically ~1e-20..1e-170: clip to 10 decades
+                    ax.set_ylim(1e-10 * emax, 3 * emax)
                 ax.set_title(f"{'H_o' if tag == 'Ho' else 'sym(H)'}  L={L}", fontsize=9)
                 ax.set_xlabel("index (1-based)")
                 if j == 0:
