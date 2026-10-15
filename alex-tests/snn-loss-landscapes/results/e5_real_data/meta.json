@@ -1,0 +1,64 @@
+{
+ "exp": "e5_real_data",
+ "data": {
+  "n_train_full": 1437,
+  "n_test": 360,
+  "n_hess": 256,
+  "train_cov_eig_min": 0.9993041057759204,
+  "train_cov_eig_max": 0.9993041057759253,
+  "subset_cov_eig_min": 0.3391694916016512,
+  "subset_cov_eig_max": 2.448987220372106,
+  "subset_class_counts": [
+   20,
+   23,
+   25,
+   23,
+   28,
+   35,
+   21,
+   19,
+   27,
+   35
+  ],
+  "subset_input_between_class_trace_frac": 0.3232703501547,
+  "subset_input_between_class_eigs": [
+   1.060791367990686,
+   0.8346421566422165,
+   0.7340391376386586,
+   0.6440414666088097,
+   0.5700449649820001,
+   0.45341123953051715,
+   0.35513101653733803,
+   0.20342853971200725,
+   0.07972965594470488,
+   0.021655146341652932
+  ],
+  "subset_idx_first10": [
+   515,
+   532,
+   1290,
+   1059,
+   1198,
+   208,
+   895,
+   370,
+   651,
+   252
+  ]
+ },
+ "steps": 1000,
+ "ho_every": 200,
+ "full_steps": [
+  0,
+  1000
+ ],
+ "lr": 0.005,
+ "optimizer": "adam",
+ "r": 10,
+ "d_in": 16,
+ "d_out": 10,
+ "n_hess": 256,
+ "train_on": "full training split (1437)",
+ "skipped": [],
+ "budget_min": 62.0
+}

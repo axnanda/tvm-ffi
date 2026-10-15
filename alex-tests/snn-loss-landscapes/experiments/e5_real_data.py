@@ -385,6 +385,15 @@ def make_callback(spec, D, loss: str, full_steps, raw: Dict[str, np.ndarray], va
             rec["H_lower_block_frac"] = math.sqrt(lower) / rec["H_norm"] if rec["H_norm"] > 0 else None
             raw[f"eig_H_step{step}"] = e_h
             raw[f"eig_Hf_sym_step{step}"] = Hf_sym_e
+            if spec.kind == "snn":  # raw (non-symmetric) spectrum: e7 predicts eig(H) = 10 x eig(Sigma_a) U hidden-block eigs
+                ev = torch.linalg.eigvals(H)
+                order = torch.argsort(ev.real, descending=True)
+                raw[f"eig_H_raw_re_step{step}"] = ev.real[order].numpy()
+                raw[f"eig_H_raw_im_step{step}"] = ev.imag[order].numpy()
+                rec["H_raw_max_abs_imag"] = float(ev.imag.abs().max())
+                rec["H_raw_top12_re"] = [float(x) for x in ev.real[order][:12]]
+                M_e = rec["class_features"]["M_eigs"]
+                rec["H_raw_top10_re_over_M_eig1"] = [float(x) / M_e[0] for x in ev.real[order][:10]]
             raw[f"topk_energy_H_step{step}"] = topk_h
             rec["wall_H"] = time.time() - t1
         if verbose:
@@ -434,6 +443,8 @@ def run_one(kind: str, L: int, seed: int, loss: str, D, steps: int, ho_every: in
     info["final_eval"] = recs[-1]["eval"]
     info["init_eval"] = recs[0]["eval"]
     info["wall"] = time.time() - t0
+    raw["params_init"] = spec.params_to_vec(params).detach().numpy()
+    raw["params_final"] = spec.params_to_vec(hist["params"]).detach().numpy()
     raw["loss_curve"] = np.asarray(hist["loss"])
     raw["grad_norm_curve"] = np.asarray(hist["grad_norm"])
     raw["logged_steps"] = np.asarray(hist["logged_steps"])
