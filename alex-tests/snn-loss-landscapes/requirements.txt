@@ -1,0 +1,8 @@
+torch>=2.1
+numpy
+scipy
+matplotlib
+scikit-learn
+pytest
+# optional (the library ships its own LIF implementation)
+snntorch
