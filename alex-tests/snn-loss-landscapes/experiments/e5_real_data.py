@@ -127,10 +127,42 @@ def data_sanity(D: Dict[str, torch.Tensor]) -> Dict[str, object]:
     return info
 
 
-def gap_metrics(e: np.ndarray, window: int = 200) -> Dict[str, object]:
-    """Gap statistics of a descending spectrum: consecutive ratios e_i/e_{i+1} within the top ``window``."""
+def _largest_log_gap_pos(e: np.ndarray, start: int, stop: int) -> Optional[int]:
+    """Same as snnland.analysis._largest_log_gap but on an array that already excludes numerical zeros."""
+    best, best_gap = None, -np.inf
+    for i in range(start, min(stop, len(e) - 1)):
+        gap = np.log(e[i] / e[i + 1])
+        if gap > best_gap:
+            best, best_gap = i, gap
+    return best
+
+
+def gap_metrics(e_all: np.ndarray, window: int = 200, tol: float = 1e-8) -> Dict[str, object]:
+    """Gap statistics of a descending spectrum, computed on the NON-ZERO part ``e = e_all[e_all > tol * e_all[0]]``.
+
+    Work-around: ``sl.cluster_stats`` searches its data-driven split among the first ``4 r^2 = 400``
+    eigenvalues *including* numerically-zero ones, so whenever rank(H_o) < 400 (always true for the
+    linear kind, true for relu/snn at small L) it returns the rank boundary (split_n_dominant == rank,
+    ratio_split ~ 1e15).  ``ndom_pos`` / ``ratio_split_pos`` replicate the library's two-gap procedure on
+    the strictly positive eigenvalues (zero tolerance ``tol * lambda_max`` as in ``cluster_stats``)."""
+    e = e_all[e_all > tol * max(float(e_all[0]), 0.0)] if len(e_all) and e_all[0] > 0 else e_all[:0]
     n = len(e)
-    m = min(window, n - 1)
+    m = max(min(window, n - 1), 0)
+    n_dom, n_bulk = R * R, R * (D_IN + D_OUT - 2 * R)
+    idx = _largest_log_gap_pos(e, 0, min(4 * n_dom, n))
+    if idx is None:
+        pos = {"ndom_pos": None, "nbulk_pos": None, "ratio_split_pos": float("nan"), "ndom_pos_gap_ratio": float("nan")}
+    else:
+        k1 = idx + 1
+        idx2 = _largest_log_gap_pos(e, k1, min(k1 + 4 * n_bulk, n))
+        k2 = idx2 + 1 if idx2 is not None else n
+        bulk = e[k1:k2]
+        pos = {"ndom_pos": int(k1), "nbulk_pos": int(k2 - k1),
+               "ratio_split_pos": float(e[:k1].mean() / bulk.mean()) if bulk.size else float("nan"),
+               "ndom_pos_gap_ratio": float(e[idx] / e[idx + 1])}
+    if n < 2:
+        return {"n_pos": int(n), **pos, "largest_gap_count_200": None, "largest_gap_ratio_200": None, "top3_gaps_200": [],
+                "n_sep_gap2": 0, "n_sep_gap1p5": 0, "n_sep_gap1p2": 0}
     with np.errstate(divide="ignore", invalid="ignore"):
         ratios = np.where((e[:m] > 0) & (e[1:m + 1] > 0), e[:m] / e[1:m + 1], np.nan)
     logr = np.log(ratios)
@@ -150,6 +182,7 @@ def gap_metrics(e: np.ndarray, window: int = 200) -> Dict[str, object]:
         return float(num.mean() / den.mean()) if num.size and den.size and den.mean() > 0 else float("nan")
 
     return {
+        "n_pos": int(n), **pos,
         "largest_gap_count_200": top3[0][0] if top3 else None,
         "largest_gap_ratio_200": top3[0][1] if top3 else None,
         "top3_gaps_200": top3,  # [(count, ratio)]
@@ -257,7 +290,8 @@ def spectrum_summary(H: torch.Tensor, spec, tag: str):
         f"topk_energy_{tag}": topk[:20],
         f"last_layer_energy_top10_mean_{tag}": float(topk[:10, -1].mean()),
         f"last_layer_energy_10_100_mean_{tag}": float(topk[10:100, -1].mean()) if topk.shape[0] >= 100 else None,
-        f"dominant_count_{tag}": cs["split_n_dominant"],
+        f"dominant_count_{tag}": gaps["ndom_pos"],  # data-driven count on the non-zero spectrum (see gap_metrics)
+        f"dominant_count_lib_{tag}": cs["split_n_dominant"],  # library value (rank boundary when rank < 400)
         f"zero_frac_{tag}": cs["zero_count"] / n, f"neg_frac_{tag}": cs["negative_count"] / n,
         f"trace_{tag}": float(torch.trace(Hs)), f"fro_{tag}": float(torch.linalg.norm(H)),
         f"lambda_min_{tag}": float(eigs[-1]), f"top200_{tag}": [float(x) for x in e[:200]],
@@ -346,7 +380,7 @@ def make_callback(spec, D, loss: str, full_steps, raw: Dict[str, np.ndarray], va
             msg = (f"    step {step:4d} loss={loss_value:.4e} acc(tr/te)={ev['train_full']['acc']:.3f}/{ev['test']['acc']:.3f} "
                    f"lam_max(Ho)={rec['coh_Ho']['lambda_max']:.3e} coh={rec['coh_Ho']['coherence']:.2f} "
                    f"ndom={rec['dominant_count_Ho']} nsep2={rec['gaps_Ho']['n_sep_gap2']} gap10={rec['gaps_Ho']['gap_at_10']:.2f} "
-                   f"gap100={rec['gaps_Ho']['gap_at_100']:.2f} ratio_split={rec['cluster_Ho']['ratio_split']:.2f} "
+                   f"gap100={rec['gaps_Ho']['gap_at_100']:.2f} ratio_split={rec['gaps_Ho']['ratio_split_pos']:.2f} "
                    f"ratioC10={rec['gaps_Ho']['ratio_C10']:.2f} act={act:.3f} wall={time.time() - t0:.1f}s")
             if step in full_steps:
                 msg += f" | asym(H)={rec['asymmetry_H']:.1e} |Hf|/|Ho|={rec['Hf_over_Ho']:.3f} wall_H={rec['wall_H']:.1f}s"
@@ -502,6 +536,12 @@ def _get(d, *keys):
     return d
 
 
+def _legend(ax, **kw):
+    h, l_ = ax.get_legend_handles_labels()
+    if h:
+        _legend(ax, **kw)
+
+
 def _mean_std(vals):
     v = np.array([x for x in vals if x is not None and np.isfinite(x)], dtype=float)
     return (float(v.mean()), float(v.std()), len(v)) if v.size else (float("nan"), float("nan"), 0)
@@ -557,7 +597,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                         ax.set_xlabel("eigenvalue index (dotted: 10, 100, 160)")
                     if j == 0:
                         ax.set_ylabel(f"eig {'H_o' if mat == 'Ho' else 'sym(H)'}")
-                    ax.legend(fontsize=6, loc="lower left")
+                    _legend(ax, fontsize=6, loc="lower left")
             fig.suptitle(f"{exp}: spectra of {'H_o' if mat == 'Ho' else 'sym(H)'} on digits (n=256, d_in=16, C=10), loss={loss}", fontsize=10)
             fig.tight_layout()
             fig.savefig(os.path.join(fig_dir, f"{exp}_spectra_{mat}_{loss}.png"), dpi=120)
@@ -589,13 +629,13 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                 ax.axhline(100, color="b", ls=":", lw=0.8, label="r^2=100")
                 ax.set_yscale("symlog", linthresh=10)
                 ax.set_xlabel("L"); ax.set_title(f"{title}\n{lab}, H_o, {loss}", fontsize=9)
-                ax.legend(fontsize=7)
+                _legend(ax, fontsize=7)
         fig.tight_layout()
         fig.savefig(os.path.join(fig_dir, f"{exp}_outlier_count_vs_L_{loss}.png"), dpi=120)
         plt.close(fig)
 
     # ---- F3: ratios and coherence vs L ----
-    ratio_keys = [("cluster_Ho.ratio_split", "ratio_split (data-driven dom/bulk)"),
+    ratio_keys = [("gaps_Ho.ratio_split_pos", "ratio_split (data-driven dom/bulk, nonzero)"),
                   ("gaps_Ho.ratio_C10", "mean(top10)/mean(10..100)"),
                   ("cluster_Ho.ratio_paper", "paper r=10: mean(top100)/mean(100..160)"),
                   ("gaps_Ho.gap_at_10", "gap e10/e11"), ("gaps_Ho.gap_at_100", "gap e100/e101"),
@@ -613,7 +653,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                     ax.plot(Ls, Ls, "k:", lw=0.8, label="= L")
                 ax.set_yscale("log")
                 ax.set_xlabel("L"); ax.set_title(f"{title}\n{lab}, H_o, {loss}", fontsize=8)
-                ax.legend(fontsize=7)
+                _legend(ax, fontsize=7)
         fig.tight_layout()
         fig.savefig(os.path.join(fig_dir, f"{exp}_ratio_coherence_vs_L_{loss}.png"), dpi=120)
         plt.close(fig)
@@ -646,7 +686,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                         ax.set_ylabel("layer energy of eigvec k")
                     if i == len(kinds) - 1:
                         ax.set_xlabel("eigenvector index k (H_o)")
-                    ax.legend(fontsize=5, ncol=2, loc="lower right")
+                    _legend(ax, fontsize=5, ncol=2, loc="lower right")
             fig.suptitle(f"{exp}: per-layer energy of the top-30 eigenvectors of H_o ({loss}, {lab}, seed 0)", fontsize=10)
             fig.tight_layout()
             fig.savefig(os.path.join(fig_dir, f"{exp}_top_eigvec_layer_energy_{loss}_{lab}.png"), dpi=120)
@@ -667,7 +707,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                     Ls_k = sorted({r_["L"] for r_ in sel(kind, loss=loss)})
                     ms = [_mean_std([getk(_ck(r_, step), key) for r_ in sel(kind, L, loss)]) for L in Ls_k]
                     ax.errorbar(Ls_k, [m[0] for m in ms], yerr=[m[1] for m in ms], color=KIND_COL[kind], marker="o", capsize=3, label=kind)
-                ax.set_xlabel("L"); ax.set_title(f"{title}\n{lab}, {loss}", fontsize=8); ax.legend(fontsize=7)
+                ax.set_xlabel("L"); ax.set_title(f"{title}\n{lab}, {loss}", fontsize=8); _legend(ax, fontsize=7)
                 if "over" in key:
                     ax.set_yscale("log")
             ax = axes[a_, len(feat_keys)]
@@ -683,7 +723,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                     ax.plot(np.arange(1, 11), np.maximum(cf["B_eigs_top10"], 1e-16), "x:", color=KIND_COL[kind], ms=3, lw=0.6,
                             alpha=0.9 if row["seed"] == 0 else 0.5)
             ax.axvline(10, color="k", ls=":", lw=0.8)
-            ax.set_yscale("log"); ax.set_title(f"eig(M) (o) and eig(B) (x), L=4, {lab}", fontsize=8); ax.set_xlabel("index"); ax.legend(fontsize=6)
+            ax.set_yscale("log"); ax.set_title(f"eig(M) (o) and eig(B) (x), L=4, {lab}", fontsize=8); ax.set_xlabel("index"); _legend(ax, fontsize=6)
         fig.suptitle(f"{exp}: readout-feature second moment M = a^T a/n = B(class means) + W(within), {loss}", fontsize=10)
         fig.tight_layout()
         fig.savefig(os.path.join(fig_dir, f"{exp}_feature_stats_{loss}.png"), dpi=120)
@@ -703,7 +743,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                     ms = [_mean_std([_ck(r_, step).get(key) for r_ in sel(kind, L, loss)]) for L in Ls_k]
                     ax.errorbar(Ls_k, [m[0] for m in ms], yerr=[m[1] for m in ms], color=KIND_COL[kind], ls=ls, marker="o", ms=4,
                                 capsize=3, label=f"{kind} {lab}")
-            ax.set_yscale("log"); ax.set_xlabel("L"); ax.set_title(f"{title}, {loss}", fontsize=8); ax.legend(fontsize=6)
+            ax.set_yscale("log"); ax.set_xlabel("L"); ax.set_title(f"{title}, {loss}", fontsize=8); _legend(ax, fontsize=6)
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, f"{exp}_asym_Hf.png"), dpi=120)
     plt.close(fig)
@@ -726,7 +766,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                 for x_ in (10, 100):
                     ax.axvline(x_, color="k", ls=":", lw=0.7)
                 ax.set_xscale("log"); ax.set_yscale("log"); ax.set_title(f"{kind} L=4, {'H_o' if mat == 'Ho' else 'sym(H)'} / lam_max", fontsize=9)
-                ax.legend(fontsize=7); ax.set_xlabel("index")
+                _legend(ax, fontsize=7); ax.set_xlabel("index")
         fig.suptitle(f"{exp}: CE vs MSE spectra at L=4 (seed 0, normalised by lambda_max)", fontsize=10)
         fig.tight_layout()
         fig.savefig(os.path.join(fig_dir, f"{exp}_ce_vs_mse_L4.png"), dpi=120)
@@ -742,7 +782,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
             axes[a_, 0].plot(rw["loss_curve"], color=KIND_COL[row["kind"]], lw=lw, alpha=alpha, label=f"{row['kind']} L{row['L']}" if row["seed"] == 0 else None)
             axes[a_, 1].plot(rw["logged_steps"], rw["acc_train_full"], "o-", color=KIND_COL[row["kind"]], lw=lw, alpha=alpha, ms=3)
             axes[a_, 2].plot(rw["logged_steps"], rw["acc_test"], "o-", color=KIND_COL[row["kind"]], lw=lw, alpha=alpha, ms=3)
-        axes[a_, 0].set_yscale("log"); axes[a_, 0].set_title(f"train loss ({loss}, full split)"); axes[a_, 0].legend(fontsize=6, ncol=3)
+        axes[a_, 0].set_yscale("log"); axes[a_, 0].set_title(f"train loss ({loss}, full split)"); _legend(axes[a_, 0], fontsize=6, ncol=3)
         axes[a_, 1].set_title("train accuracy (full split)"); axes[a_, 2].set_title("test accuracy")
         for ax in axes[a_]:
             ax.set_xlabel("step")
@@ -752,7 +792,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
 
     # ---- F9: H_o dynamics every 200 steps ----
     dyn_keys = [("coh_Ho.lambda_max", "lam_max(H_o)"), ("dominant_count_Ho", "data-driven dominant count"),
-                ("cluster_Ho.ratio_split", "ratio_split"), ("gaps_Ho.gap_at_10", "gap e10/e11"),
+                ("gaps_Ho.ratio_split_pos", "ratio_split (nonzero)"), ("gaps_Ho.gap_at_10", "gap e10/e11"),
                 ("gaps_Ho.gap_at_100", "gap e100/e101"), ("coh_Ho.coherence", "coherence")]
     for loss in losses:
         fig, axes = plt.subplots(len(kinds), len(dyn_keys), figsize=(3.2 * len(dyn_keys), 2.7 * len(kinds)), squeeze=False)
@@ -770,7 +810,7 @@ def make_figures(res_dir: str, fig_dir: str, exp: str):
                     ax.set_yscale("symlog", linthresh=10); ax.axhline(10, color="k", ls=":", lw=0.7); ax.axhline(100, color="b", ls=":", lw=0.7)
                 else:
                     ax.set_yscale("log")
-                ax.set_title(f"{kind}: {title} ({loss})", fontsize=8); ax.legend(fontsize=6)
+                ax.set_title(f"{kind}: {title} ({loss})", fontsize=8); _legend(ax, fontsize=6)
                 if i == len(kinds) - 1:
                     ax.set_xlabel("step")
         fig.tight_layout()
@@ -792,8 +832,8 @@ def print_tables(rows, end_step):
         if not rs:
             continue
         print(f"\n### {loss.upper()}: per (kind, L), mean±std over seeds; H_o on the fixed 256-subset; end = step {end_step}")
-        print("| kind | L | P | n_seeds | train acc | test acc | loss_end(full) | ndom init | ndom end | nsep2 init | nsep2 end | gap10 init | gap10 end | gap100 init | gap100 end | ratio_split init | ratio_split end | ratioC10 end | ratio_paper(r=10) end | coh init | coh end | asym(H) end | Hf/Ho init | Hf/Ho end | mean_frac end | class_mean_frac end | #eigM>W end |")
-        print("|" + "---|" * 27)
+        print("| kind | L | P | n_seeds | rank(Ho) end | train acc | test acc | loss_end(full) | ndom init | ndom end | nsep2 init | nsep2 end | gap10 init | gap10 end | gap100 init | gap100 end | ratio_split_pos init | ratio_split_pos end | ratioC10 end | ratio_paper(r=10) end | coh init | coh end | asym(H) end | Hf/Ho init | Hf/Ho end | mean_frac end | class_mean_frac end | #eigM>W end |")
+        print("|" + "---|" * 28)
         for kind in KINDS:
             for L in LS:
                 g = [r_ for r_ in rs if r_["kind"] == kind and r_["L"] == L]
@@ -801,7 +841,7 @@ def print_tables(rows, end_step):
                     continue
                 c0 = [_ck(r_, 0) for r_ in g]
                 c1 = [_ck(r_, end_step) for r_ in g]
-                vals = [kind, L, g[0]["P"], len(g),
+                vals = [kind, L, g[0]["P"], len(g), fmt(_mean_std([c["gaps_Ho"]["n_pos"] for c in c1]), 0),
                         fmt(_mean_std([r_["final_eval"]["train_full"]["acc"] for r_ in g]), 3),
                         fmt(_mean_std([r_["final_eval"]["test"]["acc"] for r_ in g]), 3),
                         fmt(_mean_std([r_["loss_final"] for r_ in g]), 4),
@@ -809,7 +849,7 @@ def print_tables(rows, end_step):
                         fmt(_mean_std([c["gaps_Ho"]["n_sep_gap2"] for c in c0]), 1), fmt(_mean_std([c["gaps_Ho"]["n_sep_gap2"] for c in c1]), 1),
                         fmt(_mean_std([c["gaps_Ho"]["gap_at_10"] for c in c0])), fmt(_mean_std([c["gaps_Ho"]["gap_at_10"] for c in c1])),
                         fmt(_mean_std([c["gaps_Ho"]["gap_at_100"] for c in c0])), fmt(_mean_std([c["gaps_Ho"]["gap_at_100"] for c in c1])),
-                        fmt(_mean_std([c["cluster_Ho"]["ratio_split"] for c in c0])), fmt(_mean_std([c["cluster_Ho"]["ratio_split"] for c in c1])),
+                        fmt(_mean_std([c["gaps_Ho"]["ratio_split_pos"] for c in c0])), fmt(_mean_std([c["gaps_Ho"]["ratio_split_pos"] for c in c1])),
                         fmt(_mean_std([c["gaps_Ho"]["ratio_C10"] for c in c1])), fmt(_mean_std([c["cluster_Ho"]["ratio_paper"] for c in c1])),
                         fmt(_mean_std([c["coh_Ho"]["coherence"] for c in c0])), fmt(_mean_std([c["coh_Ho"]["coherence"] for c in c1])),
                         fmt(_mean_std([c.get("asymmetry_H") for c in c1]), 3),
