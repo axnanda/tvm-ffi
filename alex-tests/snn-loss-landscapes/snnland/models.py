@@ -24,7 +24,7 @@ from torch import Tensor
 
 Params = Dict[str, Tensor]
 
-KINDS = ("linear", "relu", "smooth_snn", "snn")
+KINDS = ("linear", "relu", "tanh", "smooth_snn", "snn")
 SURROGATES = ("sigmoid", "atan", "fast_sigmoid", "triangle")
 RESETS = ("soft", "hard", "none")
 READOUTS = ("rate", "membrane")
@@ -201,7 +201,7 @@ class ModelSpec:
     """Architecture + hyperparameters of a functional model.
 
     Args:
-        kind: ``"linear"``, ``"relu"``, ``"smooth_snn"`` or ``"snn"``.
+        kind: ``"linear"``, ``"relu"``, ``"tanh"``, ``"smooth_snn"`` or ``"snn"``.
         L: number of weight matrices (depth).
         widths: hidden widths, an int (shared) or a sequence of length ``L - 1``.
         d_in, d_out: input / output dimensions.
@@ -258,7 +258,7 @@ class ModelSpec:
         if readout not in READOUTS:
             raise ValueError(f"unknown readout {readout!r}; choose from {READOUTS}")
         if center_features and kind == "linear":
-            raise ValueError("center_features is only defined for relu / smooth_snn / snn")
+            raise ValueError("center_features is only defined for relu / tanh / smooth_snn / snn")
         self.kind = kind
         self.L = L
         self.d_in = d_in
@@ -421,6 +421,11 @@ class ModelSpec:
             h = X
             for l in range(1, self.L):
                 h = torch.relu(self._affine(params, h, l))
+            return h
+        if self.kind == "tanh":
+            h = X
+            for l in range(1, self.L):
+                h = torch.tanh(self._affine(params, h, l))
             return h
         spikes, _ = self._spiking_stack(params, X)
         rates = spikes[-1]  # (T, *batch, h_{L-1})

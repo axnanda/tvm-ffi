@@ -55,3 +55,28 @@ symmetric in general. Its Gauss-Newton part H_o = J^T J / n (J = surrogate Jacob
 the natural analogue of the paper's H_o. The paper's decomposition therefore splits for SNNs into a
 well-defined H_o plus an H_f that carries all the asymmetry. Measure asymmetry(H) and compare with the
 smooth relaxation (sigmoid forward, 'smooth_snn') whose Hessian is exact and symmetric.
+
+## 5. The SNN update-field Jacobian is block upper-triangular (verified numerically, experiment e7)
+Let g(theta) be the surrogate gradient and H := dg/dtheta its Jacobian (what double-backprop through a
+*correctly implemented* straight-through spike returns; the library validates it against finite differences).
+With a Heaviside forward pass, the weights W_m of an EARLIER layer m < l reach g_l = delta^{(l)} (x) a^{(l-1)}
+only through spike values s^{(m)}, whose derivative is zero almost everywhere.  Hence
+    d g_l / d W_m = 0   for m < l   (a.e.),
+i.e. H is block upper-triangular in layer order (numerically: lower blocks exactly 0, see e7).  Consequences:
+ (i)  eig(H) = union over layers of eig(d g_l / d W_l)  (checked to 1e-14).  Cross-layer coherent summation,
+      the mechanism behind the paper's ratio == L, cannot occur in H: there is no symmetric cross-layer coupling.
+ (ii) The readout block is exactly  d g_L / d W_L = I_{d_out} (x) Sigma_a,  Sigma_a = a^T a / n the uncentred
+      second moment of the readout features (rates).  Its spectrum is d_out copies of eig(Sigma_a).
+ (iii) The hidden-layer diagonal blocks  d g_l / d W_l  contain only sg''-weighted residual terms (the paper's
+      H_f type): they are indefinite and vanish when the residual vanishes.  The surrogate Gauss-Newton
+      term J_sur^T J_sur does NOT appear in H except through the readout column, because the output y_hat is
+      insensitive (a.e.) to hidden weights.
+ (iv) Therefore at any interpolating point the spectrum of the SNN's update-field Jacobian is exactly
+      {eig(Sigma_a)} x d_out  union  {0}: a dominant cluster of d_out eigenvalues ~ ||mu||^2 (feature-mean
+      direction), a bulk given by the covariance spectrum of the rates, and zeros -- with no explicit
+      dependence on L.  Depth enters only through how it changes the rate statistics Sigma_a.
+ (v)  sym(H) = (H + H^T)/2 mixes the one-sided upper blocks into both triangles and produces spurious negative
+      eigenvalues; H_o^sur = J_sur^T J_sur / n (used as a Fisher proxy by SpiKFAX / A2SG) is PSD and does show
+      cross-layer coupling, but it is the curvature of a smooth stand-in model, not of the SNN's update field.
+Relu and smooth_snn have symmetric Hessians with non-zero lower blocks (e7 contrast), so this is specific
+to the Heaviside/surrogate mismatch.
