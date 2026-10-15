@@ -1,0 +1,7 @@
+# smoke-test artefacts of the experiment scripts (reduced configurations)
+results/*_smoke*/
+results/*/smoke*
+results/*/summary_smoke.json
+figures/*smoke*
+__pycache__/
+.pytest_cache/
