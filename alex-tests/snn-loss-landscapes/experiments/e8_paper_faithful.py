@@ -16,7 +16,11 @@ smoke = len(sys.argv) > 1 and sys.argv[1] == "smoke"
 Ls = [2, 3, 4, 5, 6, 7] if not smoke else [2, 3]
 seeds = [0, 1] if not smoke else [0]
 steps = 1000 if not smoke else 30
+import os
 rows = []
+if not smoke and os.path.exists(f"{OUT}/summary.json"):
+    rows = json.load(open(f"{OUT}/summary.json"))  # resume: keep completed runs
+DONE_TAGS = {r["tag"] for r in rows}
 
 def aligned_target(spec, params, X, s):
     W = None
@@ -27,7 +31,7 @@ def aligned_target(spec, params, X, s):
     sv = torch.linalg.svdvals(Wstar)
     return X @ Wstar.T, sv
 
-def stats(spec, params, X, Y, step, full):
+def stats(spec, params, X, Y, step, full, tail_tag=''):
     t0 = time.time()
     Ho = sl.gauss_newton(spec, params, X, Y)
     eo = sl.eigvals(Ho)
@@ -53,7 +57,7 @@ def stats(spec, params, X, Y, step, full):
             lower = max(H[si, sj].norm().item() for i, si in enumerate(sls) for j, sj in enumerate(sls) if j < i)
             row.update(eigH_real_top=a[:20].tolist(), eigH_real_min=float(a[-1]), max_lower_block_norm=lower,
                        max_imag=float(np.abs(ev.imag).max()))
-        np.savez(f"{OUT}/raw/{spec.kind}_{row.get('tag','')}", eig_Ho=eo.numpy(), eig_symH=es.numpy())
+        np.savez(f"{OUT}/raw/{spec.kind}_L{spec.L}_tail{tail_tag}_step{step}", eig_Ho=eo.numpy(), eig_symH=es.numpy())
     if spec.kind == "snn":
         sd = sl.spike_diagnostics(spec, params, X)
         row["mean_rate"] = float(sd["mean_rate"]); row["window_frac"] = float(sd["window_frac"])
@@ -78,6 +82,8 @@ for seed in seeds:
             params = spec.init_params(seed, init="balanced_uniform", r=r, **ik)
             Y, sv = aligned_target(spec, params, X, ik["s"])
             tag = f"{kind}_tail{ik['tail_value']}_L{L}_s{seed}"
+            if tag in DONE_TAGS:
+                continue
             run = dict(kind=kind, L=L, seed=seed, init=ik, P=spec.n_params, target_sv=sv[:6].tolist(), tag=tag, opt=opt, lr=lr, checkpoints=[])
             full_steps = {0, steps}  # budget: full surrogate Hessian only at init and end
             every = max(1, steps // 20)
@@ -86,7 +92,7 @@ for seed in seeds:
             # manual loop with checkpoints via gd_train in chunks
             p = params
             for s0 in range(0, steps + 1, every):
-                row = stats(spec, p, X, Y, s0, s0 in full_steps); row["tag"] = f"{tag}_step{s0}"
+                row = stats(spec, p, X, Y, s0, s0 in full_steps, tail_tag=f"{ik['tail_value']}_s{seed}"); row["tag"] = f"{tag}_step{s0}"
                 run["checkpoints"].append(row)
                 if s0 == steps: break
                 hist = sl.gd_train(spec, p, X, Y, lr=lr, steps=every, optimizer=opt)

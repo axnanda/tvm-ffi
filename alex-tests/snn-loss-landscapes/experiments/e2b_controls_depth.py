@@ -14,6 +14,9 @@ Plus (seed 0, setting B, L in {2,4,8}) a center_features=True variant for relu a
 Usage:  python3 experiments/e2b_controls_depth.py            # full run (results/e2b_controls_depth)
         python3 experiments/e2b_controls_depth.py --smoke    # reduced run (results/e2b_controls_depth_smoke)
         python3 experiments/e2b_controls_depth.py --figures  # only regenerate figures + analysis
+By default the script RESUMES: runs whose (kind, setting, L, seed, centered) are already in
+results/<exp>/summary.json (and whose raw npz exists) are skipped, new runs are appended to the same
+summary.json; --fresh starts over.  --res-dir overrides the results directory (resume-logic test).
 """
 import argparse
 import json
@@ -950,27 +953,43 @@ def make_figures(res_dir, fig_dir, exp):
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
+def run_key(r_):
+    """Identity of a run for the resume logic: (kind, setting, L, seed, variant=centered)."""
+    return (str(r_["kind"]), str(r_["setting"]), int(r_["L"]), int(r_["seed"]), bool(r_.get("centered", False)))
+
+
+def run_name(kind, setting, L, seed, centered):
+    return f"{kind}_{setting}_L{L}_seed{seed}" + ("_centered" if centered else "")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--figures", action="store_true", help="only regenerate figures from saved results")
     ap.add_argument("--no-timing", action="store_true", help="smoke: skip the L=8 Hessian timing probes")
+    ap.add_argument("--no-validate", action="store_true", help="smoke: skip the validate_once library cross-checks")
+    ap.add_argument("--res-dir", default=None, help="override the results directory (used to test the resume logic)")
+    ap.add_argument("--fresh", action="store_true",
+                    help="ignore an existing summary.json and start over (default: RESUME = skip runs already in it)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="only print which planned runs are missing from summary.json (resume check) and exit")
     args = ap.parse_args()
     exp = EXP + ("_smoke" if args.smoke else "")
-    res_dir = os.path.join(ROOT, "results", exp)
+    res_dir = args.res_dir or os.path.join(ROOT, "results", exp)
     fig_dir = os.path.join(ROOT, "figures")
     os.makedirs(res_dir, exist_ok=True)
     if args.figures:
         make_figures(res_dir, fig_dir, exp)
         return
     T0 = time.time()
-    print(f"torch {torch.__version__}, threads={torch.get_num_threads()}, exp={exp}", flush=True)
+    print(f"torch {torch.__version__}, threads={torch.get_num_threads()}, exp={exp}, res_dir={res_dir}", flush=True)
     if args.smoke:
-        validate_once("relu", "A", 3, 0, print_dict=True)
-        validate_once("smooth_snn", "B", 3, 0, print_dict=True)
-        validate_once("linear", "A", 3, 0, print_dict=False)
-        validate_once("relu", "B", 3, 0, centered=True, print_dict=False)
-        validate_once("smooth_snn", "B", 2, 0, centered=True, print_dict=False)
+        if not args.no_validate:
+            validate_once("relu", "A", 3, 0, print_dict=True)
+            validate_once("smooth_snn", "B", 3, 0, print_dict=True)
+            validate_once("linear", "A", 3, 0, print_dict=False)
+            validate_once("relu", "B", 3, 0, centered=True, print_dict=False)
+            validate_once("smooth_snn", "B", 2, 0, centered=True, print_dict=False)
         if not args.no_timing:
             for kind in KINDS:
                 time_hessians(kind, "B", 8)
@@ -988,33 +1007,83 @@ def main():
         tier1 = [("smooth_snn", s, L, 1, False) for s in SETTINGS for L in (2, 3, 4, 5)]
         tier2 = [("smooth_snn", s, L, 1, False) for s in SETTINGS for L in (6, 8)]
         tiers = [(0, tier0), (1, tier1), (2, tier2)]
+    # ---- RESUME: load the runs that are already saved (summary.json + raw npz) ------------------
+    sfile = os.path.join(res_dir, "summary.json")
+    mfile = os.path.join(res_dir, "run_meta.json")
     summary: List[Dict[str, object]] = []
-    skipped: List[str] = []
-    log = {"started": time.strftime("%Y-%m-%d %H:%M:%S"), "budget_min": BUDGET_MIN, "skipped": skipped,
-           "plan": [{"tier": t, "runs": [f"{k}_{s}_L{L}_seed{sd}{'_centered' if c else ''}" for (k, s, L, sd, c) in p]} for t, p in tiers]}
+    done: Dict[tuple, str] = {}
+    log: Dict[str, object] = {}
+    if not args.fresh and os.path.exists(sfile):
+        with open(sfile) as f:
+            summary = json.load(f)
+        for r_ in summary:
+            done[run_key(r_)] = r_["name"]
+        if os.path.exists(mfile):
+            with open(mfile) as f:
+                log = json.load(f)
+        print(f"RESUME: {len(summary)} runs already in {sfile} (matched on kind/setting/L/seed/centered)", flush=True)
+    log.setdefault("started", time.strftime("%Y-%m-%d %H:%M:%S"))
+    log["budget_min"] = BUDGET_MIN
+    skipped: List[str] = log.setdefault("skipped", [])
+    log["plan"] = [{"tier": t, "runs": [run_name(*x) for x in p]} for t, p in tiers]
+    all_planned = [(t, x) for t, p in tiers for x in p]
+
+    def is_done(key, name):
+        """A run counts as done only if it is in summary.json AND its raw npz exists."""
+        return key in done and os.path.exists(os.path.join(res_dir, "raw", f"{name}.npz"))
+
+    missing = [run_name(*x) for t, x in all_planned if not is_done(x, run_name(*x))]
+    stale = [run_name(*x) for t, x in all_planned if run_key(dict(kind=x[0], setting=x[1], L=x[2], seed=x[3], centered=x[4])) in done
+             and not os.path.exists(os.path.join(res_dir, "raw", f"{run_name(*x)}.npz"))]
+    this = {"started": time.strftime("%Y-%m-%d %H:%M:%S"), "runs_already_done": len(summary), "missing_runs": missing,
+            "redo_missing_raw": stale, "done_this_session": []}
+    log.setdefault("resumes", []).append(this)
+    print(f"RESUME: {len(missing)} of {len(all_planned)} planned runs still to do: {missing}", flush=True)
+    if stale:
+        print(f"RESUME: {len(stale)} runs are in summary.json but their raw npz is missing -> redone: {stale}", flush=True)
+    est_total = sum(EST_RUN_SEC[x[0]][x[2]] for t, x in all_planned if not is_done(x, run_name(*x))) / 60
+    print(f"RESUME: estimated wall time for the missing runs: {est_total:.1f} min (budget {BUDGET_MIN} min)", flush=True)
+    if args.dry_run:
+        print("DRY RUN: exiting without running anything", flush=True)
+        return
     for tier, plan in tiers:
         for (kind, setting, L, seed, centered) in plan:
+            key = (kind, setting, L, seed, centered)
+            name = run_name(kind, setting, L, seed, centered)
+            if is_done(key, name):
+                print(f"SKIP {name}: already in summary.json", flush=True)
+                continue
+            if key in done:  # summary entry without raw file -> drop and redo
+                summary = [r_ for r_ in summary if run_key(r_) != key]
+                del done[key]
             elapsed_min = (time.time() - T0) / 60
             est = EST_RUN_SEC[kind][L] / 60
             if tier > 0 and elapsed_min + est > BUDGET_MIN:
-                msg = f"{kind}_{setting}_L{L}_seed{seed} (tier {tier}; elapsed {elapsed_min:.1f} min + est {est:.1f} > budget {BUDGET_MIN})"
+                msg = f"{name} (tier {tier}; elapsed {elapsed_min:.1f} min + est {est:.1f} > budget {BUDGET_MIN})"
                 print("SKIP", msg, flush=True)
                 skipped.append(msg)
                 continue
             info = run_one(kind, setting, L, seed, centered, steps, ho_every, full_steps, res_dir)
             info["tier"] = tier
+            assert run_key(info) == key, (run_key(info), key)
             summary.append(info)
-            log["elapsed_min"] = (time.time() - T0) / 60
-            with open(os.path.join(res_dir, "summary.json"), "w") as f:
+            done[key] = name
+            this["done_this_session"].append(name)
+            this["elapsed_min"] = log["elapsed_min"] = (time.time() - T0) / 60
+            with open(sfile + ".tmp", "w") as f:
                 json.dump(summary, f)
-            with open(os.path.join(res_dir, "run_meta.json"), "w") as f:
+            os.replace(sfile + ".tmp", sfile)  # atomic: an interrupted write never corrupts summary.json
+            with open(mfile, "w") as f:
                 json.dump(log, f, indent=1)
-            print(f"[elapsed {log['elapsed_min']:.1f} min, {len(summary)} runs done]", flush=True)
-    log["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    log["elapsed_min"] = (time.time() - T0) / 60
-    with open(os.path.join(res_dir, "run_meta.json"), "w") as f:
+            print(f"[elapsed {log['elapsed_min']:.1f} min, {len(summary)} runs in summary, "
+                  f"{len(this['done_this_session'])} done this session]", flush=True)
+    this["finished"] = log["finished"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    this["elapsed_min"] = log["elapsed_min"] = (time.time() - T0) / 60
+    log["n_runs"] = len(summary)
+    with open(mfile, "w") as f:
         json.dump(log, f, indent=1)
-    print(f"ALL RUNS DONE in {log['elapsed_min']:.1f} min; skipped: {skipped}", flush=True)
+    print(f"ALL RUNS DONE in {log['elapsed_min']:.1f} min this session ({len(this['done_this_session'])} new, "
+          f"{len(summary)} total); skipped: {skipped}", flush=True)
     try:
         make_figures(res_dir, fig_dir, exp)
         print(f"FIGURES DONE; total {(time.time() - T0) / 60:.1f} min", flush=True)
