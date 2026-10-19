@@ -425,3 +425,11 @@ SNN landscape literature: [Gygax and Zenke 2024](https://arxiv.org/abs/2404.1496
 [A2SG](https://arxiv.org/html/2606.11236v1), [SpiKFAX](https://arxiv.org/abs/2609.29379),
 [QIF loss landscapes](https://arxiv.org/abs/2606.03935), [Singh et al. 2021 (H_o / H_f)](https://arxiv.org/abs/2106.16225),
 [Papyan 2020](https://arxiv.org/pdf/2008.11865); full list in `docs/related_work.md`.
+
+## Follow-up: WeightWatcher study of L3 lookup layers and spiking L3
+
+The companion study (WeightWatcher power-law exponents alpha vs accuracy for MLP3, L3 lookup-layer classifiers
+and their spiking variants on Fashion-MNIST, 208 sweep runs plus trajectories and controls) lives in the
+`axnanda/l3-large-lookup-layers` repository, branch `claude/snn-l3-weightwatcher`:
+`docs/WEIGHTWATCHER_STUDY.md` (report), `docs/CRITICAL_DESIGN.md` (architecture critique), `l3lab/` (code).
+The sourced literature memo used for it is `docs/weightwatcher_l3_related_work.md` here.
